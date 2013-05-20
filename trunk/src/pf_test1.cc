@@ -44,57 +44,49 @@ void PF_ConfirmStatistics()
 {
    // Must remember to delete the memory returned from StatisticsMgr::Get
    cout << "Verifying the statistics for buffer manager: ";
-   int *piGP = pStatisticsMgr->Get("GetPage");
-   int *piPF = pStatisticsMgr->Get("PageFound");
-   int *piPNF = pStatisticsMgr->Get("PageNotFound");
-   int *piWP = pStatisticsMgr->Get("WritePage");
-   int *piRP = pStatisticsMgr->Get("ReadPage");
-   int *piFP = pStatisticsMgr->Get("FlushPage");
+   int iGP = pStatisticsMgr->Get("GetPage");
+   int iPF = pStatisticsMgr->Get("PageFound");
+   int iPNF = pStatisticsMgr->Get("PageNotFound");
+   int iWP = pStatisticsMgr->Get("WritePage");
+   int iRP = pStatisticsMgr->Get("ReadPage");
+   int iFP = pStatisticsMgr->Get("FlushPage");
 
-   if (piGP && (*piGP != 702)) {
-      cout << "Number of GetPages is incorrect! (" << *piGP << ")\n";
+   if (iGP != 702) {
+      cout << "Number of GetPages is incorrect! (" << iGP << ")\n";
       // No built in error code for this
       exit(1);
    }
-   if (piPF && (*piPF != 23)) {
+   if (iPF != 23) {
       cout << "Number of pages found in the buffer is incorrect! (" <<
-        *piPF << ")\n";
+        iPF << ")\n";
       // No built in error code for this
       exit(1);
    }
-   if (piPNF && (*piPNF != 679)) {
+   if (iPNF != 679) {
       cout << "Number of pages not found in the buffer is incorrect! (" <<
-        *piPNF << ")\n";
+        iPNF << ")\n";
       // No built in error code for this
       exit(1);
    }
-   if (piRP && (*piRP != 679)) {
+   if (iRP != 679) {
       cout << "Number of read requests to the Unix file system is " <<
-         "incorrect! (" << *piPNF << ")\n";
+         "incorrect! (" << iPNF << ")\n";
       // No built in error code for this
       exit(1);
    }
-   if (piWP && (*piWP != 339)) {
+   if (iWP != 339) {
       cout << "Number of write requests to the Unix file system is "<<
-         "incorrect! (" << *piPNF << ")\n";
+         "incorrect! (" << iPNF << ")\n";
       // No built in error code for this
       exit(1);
    }
-   if (piFP && (*piFP != 16)) {
+   if (iFP != 16) {
       cout << "Number of requests to flush the buffer is "<<
-         "incorrect! (" << *piPNF << ")\n";
+         "incorrect! (" << iPNF << ")\n";
       // No built in error code for this
       exit(1);
    }
    cout << " Correct!\n";
-
-   // Delete the memory returned from StatisticsMgr::Get
-   delete piGP;
-   delete piPF;
-   delete piPNF;
-   delete piWP;
-   delete piRP;
-   delete piFP;
 }
 #endif    // PF_STATS
 
