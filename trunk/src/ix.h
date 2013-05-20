@@ -13,6 +13,51 @@
 #include "rm_rid.h"  // Please don't change these lines
 #include "pf.h"
 
+////////////////////////////////////////////////////////////////////
+//
+// IX_BTNode: IX B+ Tree interface
+//
+class IX_BTNode {
+    friend class IX_FileHandle;
+    friend class IX_FileScan;
+public:
+    IX_BTNode ();
+    ~IX_BTNode();
+
+    // Return the data corresponding to the record.  Sets *pData to the
+    // record contents.
+    RC GetData(char *&pData) const;
+
+    // Return the RID associated with the record
+    RC GetRid (RID &rid) const;
+
+private:
+    // Copy constructor
+    IX_BTNode  (const IX_Record &record);
+    // Overloaded =
+    IX_BTNode& operator=(const IX_Record &record);
+
+
+    RC insertNode();
+    RC deleteNode();
+    RC mergeNode();
+    RC splitNode();
+
+    char *pData;
+    RID  rid;
+};
+
+//
+// IX_FileHdr: Header structure for files
+//
+struct IX_FileHdr {
+    PageNum firstFree;     // first free page in the linked list
+    int recordSize;        // fixed record size
+    int numRecordsPerPage; // # of records in each page
+    int pageHeaderSize;    // page header size
+    int numRecords;        // # of pages in the file
+};
+////////////////////////////////////////////////////////////////////
 //
 // IX_IndexHandle: IX Index File interface
 //
