@@ -5,7 +5,8 @@
 //
 
 #include "ix_internal.h"
-
+#include "rm_internal.h"
+#include <stdio.h>
 // 
 // IX_Manager
 //
@@ -14,7 +15,7 @@
 IX_Manager::IX_Manager(PF_Manager &pfm)
 {
    // Set the associated PF_Manager object
-   pPfm = &pfm;
+  pPfm = &pfm;
 }
 
 //
@@ -45,7 +46,7 @@ This method creates an index numbered indexNo on the data file named fileName. Y
 The type and length of the attribute being indexed are described by parameters attrType and attrLength, respectively. As in the RM component, attrLength should be 4 for attribute types INT or FLOAT, and it should be between 1 and MAXSTRINGLEN for attribute type STRING. This method should establish an empty index by creating the PF component file and initializing it appropriately. 
 */
 
-RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType, int attrLength)
+RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType, int attrLength,int recordSize)
 {
    RC rc;
    PF_FileHandle pfFileHandle;
@@ -55,16 +56,20 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType,
 //1.creat a file with name "fileName.indexNo"
    // Note that PF_Manager::CreateFile() will take care of fileName
    // Call PF_Manager::CreateFile()
-
-   if(indexNo < 0||fileName == NULL)
-    goto err_return;//specific the error
-
    char indexFileName[20] = {'0'};//at the beginning, the length of the index name is fixed;
-   int len3 = sprintf(index,"%s.%d",fileName,indexNo);
+//int len3 = sprintf(index,"%s.%d",fileName,indexNo);
+   if(indexNo < 0||fileName == NULL)
+   {
+       goto err_return;
+   }//specific the error
 
-   if (rc = pPfm->CreateFile(indexFileName))
-      // Test: existing fileName, wrong permission
-      goto err_return;
+   //char indexFileName[20] = {'0'};//at the beginning, the length of the index name is fixed;
+   //int len3 = sprintf(index,"%s.%d",fileName,indexNo);
+
+   if (rc = pPfm->CreateFile(indexFileName))// Test: existing fileName, wrong permission   
+   {
+       goto err_return;
+   }
 
 //2.analyse attribute type
       // Sanity Check: attrType, attrLength
@@ -78,7 +83,7 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType,
          break;
 
       case STRING:
-         if (_attrLength < 1 || _attrLength > MAXSTRINGLEN)
+         if (attrLength < 1 || attrLength > MAXSTRINGLEN)
             // Test: wrong _attrLength
             return (IX_INVALIDATTR);
          break;
@@ -104,12 +109,12 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType,
       goto err_unpin;
 
    // Write the file header (to the buffer pool)
-   fileHdr = (RM_FileHdr *)pData;
+   fileHdr = (IX_FileHdr *)pData;
    fileHdr->firstFree = RM_PAGE_LIST_END;
    fileHdr->recordSize = recordSize;
    fileHdr->numRecordsPerPage = (PF_PAGE_SIZE - sizeof(RM_PageHdr) - 1) 
                                 / (recordSize + 1.0/8);
-   if (recordSize * (fileHdr->numRecordsPerPage + 1) 
+   if (fileHdr->recordSize * (fileHdr->numRecordsPerPage + 1) 
        + fileHdr->numRecordsPerPage / 8 
        <= PF_PAGE_SIZE - sizeof(RM_PageHdr) - 1)
       fileHdr->numRecordsPerPage++;
@@ -143,7 +148,6 @@ err_close:
 err_destroy:
    pPfm->DestroyFile(fileName);
 err_return:
-   // Return error
    return (rc);
 }
 
@@ -294,4 +298,3 @@ err_return:
    // Return error
    return (rc);
 }
-
