@@ -12,19 +12,5 @@
 #include <cassert>
 #include "rm.h"
 
-//
-// Constants and defines
-//
-const int RM_HEADER_PAGE_NUM = 0;
-
-#define RM_PAGE_LIST_END  -1       // end of list of free pages
-#define RM_PAGE_FULL      -2       // all slots in the page are full
-
-//
-// RM_PageHdr: Header structure for pages
-//
-struct RM_PageHdr {
-   PageNum nextFree;
-};
 
 #endif

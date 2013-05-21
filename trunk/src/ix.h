@@ -12,51 +12,16 @@
 #include "redbase.h"  // Please don't change these lines
 #include "rm_rid.h"  // Please don't change these lines
 #include "pf.h"
-///////////////////////////////////////////////////////////////////////////////////
-//IX_Record: the record represente the B+ tree node
-//////
-////////////////////////////////////////////////////////////////////
-//
-// IX_BTNode: IX B+ Tree interface
-//
-class IX_BTNode {
-    friend class IX_FileHandle;
-    friend class IX_FileScan;
-public:
-    IX_BTNode (AttrType attributeType,PF_PageHandle& aPh,bool isNewPage =true,int pageSize = PF_PAGE_SIZE);
-    ~IX_BTNode();
-
-    // Return the data corresponding to the record.  Sets *pData to the
-    // record contents.
-    RC GetData(char *&pData) const;
-
-    // Return the RID associated with the record
-    RC GetRid (RID &rid) const;
-
-private:
-    RC insertNode();
-    RC deleteNode();
-    RC mergeNode();
-    RC splitNode();
-
-    char *pData;
-    char *keys;//the table of key value according to the attribute
-    RID  *rids;//the rids values table
-    RID  nodeRid;//this is the rid of the page
-    AttrType attributeType;
-    int attributeLength;
-    int order;//the order of the node
-};
 
 //
 // IX_FileHdr: Header structure for files
 //
 struct IX_FileHdr {
     PageNum firstFree;     // first free page in the linked list
-    int recordSize;        // fixed record size
-    int numRecordsPerPage; // # of records in each page
-    int pageHeaderSize;    // page header size
-    int numRecords;        // # of pages in the file
+    unsigned recordSize;        // fixed record size
+    unsigned numRecordsPerPage; // # of records in each page
+    unsigned pageHeaderSize;    // page header size
+    unsigned numRecords;        // # of pages in the file
 };
 ////////////////////////////////////////////////////////////////////
 //
@@ -108,15 +73,13 @@ public:
     ~IX_Manager();
 
     // Create a new Index
-    RC CreateIndex(const char *fileName, int indexNo,
-                   AttrType attrType, int attrLength,int recordSize);
+    RC CreateIndex(const char *fileName, int indexNo, AttrType attrType, int attrLength, unsigned recordSize);
 
     // Destroy and Index
     RC DestroyIndex(const char *fileName, int indexNo);
 
     // Open an Index
-    RC OpenIndex(const char *fileName, int indexNo,
-                 IX_IndexHandle &indexHandle);
+    RC OpenIndex(const char *fileName, int indexNo, IX_IndexHandle &indexHandle);
 
     // Close an Index
     RC CloseIndex(IX_IndexHandle &indexHandle);

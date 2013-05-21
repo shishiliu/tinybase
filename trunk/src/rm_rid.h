@@ -11,16 +11,7 @@
 // components will require the use of RID but not the rest of RM.
 
 #include "redbase.h"
-
-//
-// PageNum: uniquely identifies a page in a file
-//
-typedef int PageNum;
-
-//
-// SlotNum: uniquely identifies a record in a page
-//
-typedef int SlotNum;
+#include "rm_rid.fwd.h"
 
 //
 // RID: Record id interface

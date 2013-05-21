@@ -147,49 +147,56 @@ RC RM_FileScan::GetNextRec(RM_Record &rec)
    RC rc;
    PF_PageHandle pageHandle;
    char *pData;
-   RID *curRid;
 
    // Sanity Check: 'this' must be open
    if (!bScanOpen)
       return (RM_CLOSEDSCAN);
 
    // Sanity Check: fileHandle must be open
-   if (pFileHandle->fileHdr.recordSize == 0) // a little tricky here
+   if (pFileHandle->fileHdr.recordSize == 0) {
+      // a little tricky here
       // Test: unopened fileHandle
       return (RM_CLOSEDFILE);
+   }
 
    // Fetch another page if required
    if (curSlotNum == pFileHandle->fileHdr.numRecordsPerPage) {
 repeat:
       // Get next page
-      if (rc = pFileHandle->pfFileHandle.GetNextPage(curPageNum, pageHandle))
+      if (OK_RC != (rc = pFileHandle->pfFileHandle.GetNextPage(curPageNum, pageHandle))) {
          // Test: EOF
          goto err_return;
+      }
 
       // Update curPageNum
-      if (rc = pageHandle.GetPageNum(curPageNum))
+      if (OK_RC != (rc = pageHandle.GetPageNum(curPageNum))) {
          // Should not happen
          // In fact, we need to unpin the page, but don't know the page number
          goto err_return;
+      }
 
       // Reset curSlotNum
       curSlotNum = 0;
    }
    // We didn't process the whole page in the previous GetNextRec() call
    else {
-      if (rc = pFileHandle->pfFileHandle.GetThisPage(curPageNum, pageHandle))
-         if (rc == PF_INVALIDPAGE)
+      if (OK_RC != (rc = pFileHandle->pfFileHandle.GetThisPage(curPageNum, pageHandle))) {
+         if (rc == PF_INVALIDPAGE) {
             // We can get PF_INVALIDPAGE if curPageNum was disposed
             goto repeat;
-         else
+         }
+         else {
             // Test: closed fileHandle
             goto err_return;
+         }
+      }
    }
 
    //
-   if (rc = pageHandle.GetData(pData))
+   if (OK_RC != (rc = pageHandle.GetData(pData))) {
       // Should not happen
       goto err_unpin;
+   }
 
    // Find the next record based on scan condition
    FindNextRecInCurPage(pData);
@@ -197,20 +204,19 @@ repeat:
    // No HIT in this page, go to next page
    if (curSlotNum == pFileHandle->fileHdr.numRecordsPerPage) {
       // Unpin this page
-      if (rc = pFileHandle->pfFileHandle.UnpinPage(curPageNum))
+      if (OK_RC != (rc = pFileHandle->pfFileHandle.UnpinPage(curPageNum))) {
          // Should not happen
          goto err_return;
-      
+      }
       goto repeat;
    }
                
    // HIT: copy the record to the given location
-   curRid = new RID(curPageNum, curSlotNum);
-   rec.rid = *curRid;
-   delete curRid;
+   rec.rid = RID(curPageNum, curSlotNum);
 
-   if (rec.pData)
+   if (rec.pData) {
       delete [] rec.pData;
+   }
    rec.recordSize = pFileHandle->fileHdr.recordSize;
    rec.pData = new char[rec.recordSize];
    memcpy(rec.pData,
@@ -226,12 +232,13 @@ repeat:
    FindNextRecInCurPage(pData);
 
    // Unpin this page
-   if (rc = pFileHandle->pfFileHandle.UnpinPage(curPageNum))
+   if (OK_RC != (rc = pFileHandle->pfFileHandle.UnpinPage(curPageNum))) {
       // Should not happen
       goto err_return;
+   }
 
    // Return ok
-   return (0);
+   return OK_RC;
 
    // Recover from inconsistent state due to unexpected error
 err_unpin:
@@ -250,17 +257,19 @@ err_return:
 void RM_FileScan::FindNextRecInCurPage(char *pData)
 {
    for ( ; curSlotNum < pFileHandle->fileHdr.numRecordsPerPage; curSlotNum++) {
-      float cmp;
-      int i;
-      float f;
+      float cmp = 0;
+      int i = 0;
+      float f = 0;
 
       // Skip empty slots
-      if (!pFileHandle->GetBitmap(pData + sizeof(RM_PageHdr), curSlotNum))
+      if (!pFileHandle->GetBitmap(pData + sizeof(RM_PageHdr), curSlotNum)) {
          continue;
+      }
       
       // Hit if NO_OP
-      if (compOp == NO_OP)
+      if (compOp == NO_OP) {
          break;
+      }
 
       // Do comparison according to the attribute type
       switch (attrType) {
@@ -297,8 +306,9 @@ void RM_FileScan::FindNextRecInCurPage(char *pData)
           || (compOp == GT_OP && cmp > 0)
           || (compOp == LE_OP && cmp <= 0)
           || (compOp == GE_OP && cmp >= 0)
-          || (compOp == NE_OP && cmp != 0))
+          || (compOp == NE_OP && cmp != 0)) {
          break;
+      }
    }
 }
 
@@ -311,9 +321,10 @@ void RM_FileScan::FindNextRecInCurPage(char *pData)
 RC RM_FileScan::CloseScan()
 {
    // Sanity Check: 'this' must be open
-   if (!bScanOpen)
+   if (!bScanOpen) {
       // Test: closed RM_FileScan
       return (RM_CLOSEDSCAN);
+   }
 
    // Reset member variables
    bScanOpen = FALSE;
@@ -328,6 +339,6 @@ RC RM_FileScan::CloseScan()
    pinHint = NO_HINT;
 
    // Return ok
-   return (0);
+   return OK_RC;
 }
 
