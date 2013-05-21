@@ -12,7 +12,9 @@
 #include "redbase.h"  // Please don't change these lines
 #include "rm_rid.h"  // Please don't change these lines
 #include "pf.h"
-
+///////////////////////////////////////////////////////////////////////////////////
+//IX_Record: the record represente the B+ tree node
+//////
 ////////////////////////////////////////////////////////////////////
 //
 // IX_BTNode: IX B+ Tree interface
@@ -21,7 +23,7 @@ class IX_BTNode {
     friend class IX_FileHandle;
     friend class IX_FileScan;
 public:
-    IX_BTNode ();
+    IX_BTNode (AttrType attributeType,PF_PageHandle& aPh,bool isNewPage =true,int pageSize = PF_PAGE_SIZE);
     ~IX_BTNode();
 
     // Return the data corresponding to the record.  Sets *pData to the
@@ -32,19 +34,18 @@ public:
     RC GetRid (RID &rid) const;
 
 private:
-    // Copy constructor
-    IX_BTNode  (const IX_Record &record);
-    // Overloaded =
-    IX_BTNode& operator=(const IX_Record &record);
-
-
     RC insertNode();
     RC deleteNode();
     RC mergeNode();
     RC splitNode();
 
     char *pData;
-    RID  rid;
+    char *keys;//the table of key value according to the attribute
+    RID  *rids;//the rids values table
+    RID  nodeRid;//this is the rid of the page
+    AttrType attributeType;
+    int attributeLength;
+    int order;//the order of the node
 };
 
 //
@@ -108,7 +109,7 @@ public:
 
     // Create a new Index
     RC CreateIndex(const char *fileName, int indexNo,
-                   AttrType attrType, int attrLength);
+                   AttrType attrType, int attrLength,int recordSize);
 
     // Destroy and Index
     RC DestroyIndex(const char *fileName, int indexNo);
@@ -119,6 +120,8 @@ public:
 
     // Close an Index
     RC CloseIndex(IX_IndexHandle &indexHandle);
+private:
+    PF_Manager *pPfm;
 };
 
 //
