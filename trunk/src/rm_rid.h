@@ -20,6 +20,7 @@ class RID {
 public:
     RID();                                         // Default constructor
     RID(PageNum pageNum, SlotNum slotNum);
+    RID(const RID &rid);
     ~RID();                                        // Destructor
     RID& operator=(const RID &rid);                // Overloaded =
     bool operator==(const RID &rid) const ;        // Overloaded ==
@@ -29,7 +30,7 @@ public:
 
 private:
     // Copy constructor
-    RID(const RID &rid);
+   
 
     PageNum pageNum;
     SlotNum slotNum;
