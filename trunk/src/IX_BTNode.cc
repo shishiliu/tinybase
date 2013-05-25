@@ -4,17 +4,22 @@
 #include <cmath>
 //IX_BTNode
 
-IX_BTNode::IX_BTNode(AttrType iAttrType, int iAttrLength, PF_PageHandle& xPageHandle, bool bNewPage) : attributeType(iAttrType), attributeLength(iAttrLength)
+IX_BTNode::IX_BTNode(AttrType iAttrType, int iAttrLength, PF_PageHandle& xPageHandle, bool bNewPage)
+: pData(NULL)
+, attributeType(iAttrType)
+, attributeLength(iAttrLength)
+, order(0)
+, keysNum(0)
+, left(0)
+, right(0)
 {
-   keys = NULL;
-   rids = NULL;
    int pageSize = PF_PAGE_SIZE;
    order = floor(
-           (pageSize + sizeof (keysNum) + 2 * sizeof (PageNum)) /
+           (pageSize + sizeof (int) + 2 * sizeof (PageNum)) /
            (sizeof (RID) + attributeLength));
    // n + 1 pointers + n keys + 1 keyspace used for numKeys
    while (((order) * (attributeLength + sizeof (RID)))
-           > ((unsigned int) pageSize - sizeof (keysNum) - 2 * sizeof (PageNum)))
+           > ((unsigned) pageSize - sizeof (int) - 2 * sizeof (PageNum)))
       order--;
    char * pData = NULL;
    if (xPageHandle.GetData(pData)) {
@@ -74,17 +79,18 @@ RC IX_BTNode::InsertNode(const void* aKey, const RID & aRid)
    if (keysNum >= order) return -1; //need to add the state code
    void *currKey;
    int i = 0;
-   for (i = 0; i < keysNum; i++) {
+   for (i = keysNum - 1; i >= 0; --i) {
       GetKey(i, currKey);
-      if (CompareKey(aKey, currKey) <= 0) {
+      int compareResult = CompareKey(aKey, currKey);
+      if (compareResult >= 0) {
          break;
-      }
+      } 
       *(rids + i + 1) = *(rids + i);
       SetKey(i + 1, currKey);
    }
+   keysNum++;
    *(rids + i + 1) = aRid;
    SetKey(i + 1, aKey);
-   keysNum++;
    return OK_RC;
 }
 
@@ -196,7 +202,7 @@ RC IX_BTNode::GetKey(int iPos, void*& aKey)
 
 RC IX_BTNode::SetKey(int iPos, const void* aKey)
 {
-   if (iPos >= 0 && iPos < keysNum) {
+   if (iPos >= 0 && iPos < this->order) {
       memcpy(keys + attributeLength*iPos,
               aKey,
               attributeLength);
