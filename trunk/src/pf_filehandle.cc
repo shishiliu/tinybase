@@ -125,7 +125,7 @@ RC PF_FileHandle::GetLastPage(PF_PageHandle &pageHandle) const
 //
 RC PF_FileHandle::GetNextPage(PageNum current, PF_PageHandle &pageHandle) const
 {
-   int rc;               // return code
+   int rc = OK_RC; // return code
 
    // File must be open
    if (!bFileOpen)
@@ -140,7 +140,7 @@ RC PF_FileHandle::GetNextPage(PageNum current, PF_PageHandle &pageHandle) const
 
       // If this is a valid (used) page, we're done
       if (!(rc = GetThisPage(current, pageHandle)))
-         return (0);
+         return OK_RC;
 
       // If unexpected error, return it
       if (rc != PF_INVALIDPAGE)

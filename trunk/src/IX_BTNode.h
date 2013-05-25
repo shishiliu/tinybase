@@ -56,8 +56,6 @@ private:
     int keysNum;//the number of keys
     PageNum  left;//to the left neighbour:pageID
     PageNum  right; //to the right neighbour:pageID
-
-   
 };
 
 
