@@ -243,3 +243,37 @@ int IX_BTNode::GetOrder()
 }
 
 
+AttrType IX_BTNode::GetType(){
+    return attributeType;    
+}
+
+int IX_BTNode::GetAttrLength(){
+    return attributeLength;
+}
+
+std::ostream& operator<<(std::ostream &os,IX_BTNode &a){
+    os << a.GetLeft() << "<-"
+       << a.GetNodeRID().GetPage()  << "{";
+  for (int pos = 0; pos <a.GetKeysNum(); pos++) {
+    void * k = NULL; a.GetKey(pos, k);
+    os << "(";
+    if(a.GetType()== INT )
+      os << *((int*)k);
+    if(a.GetType() == FLOAT )
+      os << *((float*)k);
+    if(a.GetType() == STRING ) {
+      for(int i=0; i < a.GetAttrLength(); i++)
+        os << ((char*)k)[i];
+    }
+    PageNum P;
+    a.GetRid(pos).GetPageNum(P);
+    SlotNum S;
+    a.GetRid(pos).GetSlotNum(S);
+    os << "," <<P<<" "<<S<< "), ";
+    
+  }
+    os <<"}"<< "->"<< a.GetRight();
+    return os;
+}
+
+
