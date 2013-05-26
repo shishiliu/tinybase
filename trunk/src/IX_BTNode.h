@@ -46,6 +46,9 @@ public:
     RID GetRid(const int iPos);
     RID GetNodeRID();
     int GetOrder();
+    AttrType GetType();
+    int GetAttrLength();
+    friend std::ostream &operator<<(std::ostream &os,IX_BTNode &a);
 private:
     char *pData;
     char* keys; //the table of key value according to the attribute
