@@ -68,72 +68,83 @@ RC IX_BTNode::GetData(char *& aData) const {
     return OK_RC;
 }
 
-RC IX_BTNode::InsertNode(const void* aKey, const RID & aRid) {
-    if (keysNum >= order) return -1; //need to add the state code
-    void *currKey;
-    int i = 0;
-    for (i = keysNum - 1; i >= 0; --i) {
-        GetKey(i, currKey);
-        int compareResult = CompareKey(aKey, currKey);
-        if (compareResult >= 0) {
-            break;
-        }
-        *(rids + i + 1) = *(rids + i);
-        SetKey(i + 1, currKey);
-    }
-    keysNum++;
-    *(rids + i + 1) = aRid;
-    SetKey(i + 1, aKey);
-    return OK_RC;
+RC IX_BTNode::InsertNode(const void* aKey, const RID & aRid)
+{
+   
+   if (keysNum >= order) return -1; //need to add the state code
+    int i = -1;
+  void *prevKey = NULL;
+  void *currKey = NULL;
+  for(i = keysNum-1; i >= 0; i--)
+  {
+    prevKey = currKey;
+    GetKey(i, currKey);    
+    if (CompareKey(aKey, currKey) >= 0)
+      break; // go out and insert at i
+    rids[i+1] = rids[i];
+    SetKey(i + 1, currKey);
+  }
+
+  rids[i+1] = aRid;
+  //SetKey(i+1, aKey);
+   memcpy(keys + attributeLength*(i+1),
+              aKey,
+              attributeLength);
+  keysNum++;
+  return 0;
 }
 
-RC IX_BTNode::DeleteNode(const void* aKey) {
-    int pos = FindKey(aKey);
-    if (pos < 0) return -1; //failed not exist
-    else for (int i = pos; i < keysNum - 1; i++) {
-            void * p;
-            GetKey(i + 1, p);
-            SetKey(i, p);
-            *(rids + i) = *(rids + i + 1);
-            keysNum--;
-            if (keysNum == 0) return -2; //null node code
-        }
-    return OK_RC;
+RC IX_BTNode::DeleteNode(const void* aKey)
+{
+   int pos = FindKey(aKey);
+   if (pos < 0) return -1; //failed not exist
+   else for (int i =pos; i < keysNum - 1; i++) {
+         void * p;
+         GetKey(i + 1, p);
+         SetKey(i, p);
+         *(rids + i) = *(rids + i + 1);
+   }
+         keysNum--;
+         if (keysNum == 0) return -2; //null node code
+   return OK_RC;
 }
 
-RC IX_BTNode::MergeNode(IX_BTNode * aNode) {
-    if (keysNum + aNode->GetKeysNum() > order) return -1; // overflow of the node
-    for (int i = 0; i < aNode->GetKeysNum(); i++) {
-        void *k;
-        aNode->GetKey(i, k);
-        RID rid = aNode->GetRid(i);
-        RC rc = InsertNode(k, rid);
-        if (rc) {
-            return rc;
-        }
-    }
-    int moveCount = aNode->GetKeysNum();
-    for (int i = 0; i < moveCount; i++) {
-        void * keytodel;
-        aNode->GetKey(0, keytodel);
-        RC rc = aNode->DeleteNode(keytodel);
-        if (rc == -1) return rc;
-    }
-    PageNum page;
-    this->GetNodeRID().GetPageNum(page);
-    if (page == aNode->GetLeft()) {
-        SetRight(aNode->GetRight());
-    } else
-        SetLeft(aNode->GetLeft());
-    return OK_RC;
+RC IX_BTNode::MergeNode(IX_BTNode * aNode)
+{
+   if (keysNum + aNode->GetKeysNum() > order) return -1; // overflow of the node
+   for (int i = 0; i < aNode->GetKeysNum(); i++) {
+      void *k;
+      aNode->GetKey(i, k);
+      int* tmp = (int*) k;
+      cout<<*tmp<<endl;
+      RID rid = aNode->GetRid(i);
+      RC rc = InsertNode(k, rid);
+      if (rc) {
+         return rc;
+      }
+   }
+   int moveCount = aNode->GetKeysNum();
+   for (int i = 0; i < moveCount; i++) {
+      void * keytodel;
+      aNode->GetKey(0, keytodel);
+      RC rc = aNode->DeleteNode(keytodel);
+      if (rc == -1) return rc;
+   }
+   PageNum page;
+   this->GetNodeRID().GetPageNum(page);
+   if (page == aNode->GetLeft()) {
+      SetRight(aNode->GetRight());
+   } else
+      SetLeft(aNode->GetLeft());
+   return OK_RC;
 }
 
 RC IX_BTNode::SplitNode(IX_BTNode * aNewNode) {
-    if (keysNum < order) return -1; //no need to split;
+    if (keysNum > order) return -1; //no need to split;
     // else move a half to the new node 
     int movePos = (keysNum + 1) / 2;
     int moveCount = (keysNum - movePos);
-    if (aNewNode->GetKeysNum() + moveCount > aNewNode->GetOrder()) return -1; //failds
+    if (aNewNode->GetKeysNum() + moveCount > aNewNode->GetOrder()) return -1; //fails
     for (int i = movePos; i < keysNum; i++) {
         RID rid = *(rids + i);
         void * k;
@@ -143,8 +154,8 @@ RC IX_BTNode::SplitNode(IX_BTNode * aNewNode) {
     }
     for (int i = 0; i < moveCount; i++) {
         void * keytodel;
-        aNewNode->GetKey(0, keytodel);
-        RC rc = aNewNode->DeleteNode(keytodel);
+        GetKey(GetKeysNum()-1, keytodel);
+        RC rc = DeleteNode(keytodel);
         if (rc == -1) return rc;
     }
     PageNum pageofnewnode;
@@ -178,21 +189,22 @@ int IX_BTNode::CompareKey(const void* aKey, const void* bKey) {
     return 0;
 }
 
-RC IX_BTNode::GetKey(int iPos, void*& aKey) {
-    if (iPos >= 0 && iPos < this->order) {
-        aKey = keys + iPos * attributeLength;
-        return OK_RC;
-    } else {
-        return -1;
-    }
+RC IX_BTNode::GetKey(int iPos, void*& aKey)
+{
+   if (iPos >= 0 && iPos < keysNum) {
+      aKey = keys + attributeLength*iPos;
+      return OK_RC;
+   } else {
+      return -1;
+   }
 }
 
-RC IX_BTNode::SetKey(int iPos, const void* aKey) {
-    if (iPos >= 0 && iPos < this->order) {
-        memcpy(keys + attributeLength*iPos,
-                aKey,
-                attributeLength);
-
+RC IX_BTNode::SetKey(int iPos, const void* aKey)
+{
+   if (iPos >= 0 && iPos < order) {
+      memcpy(keys + attributeLength*iPos,
+              aKey,
+              attributeLength);
         return OK_RC;
     } else {
         return -1;
@@ -224,39 +236,34 @@ int IX_BTNode::GetOrder() {
     return order;
 }
 
+int IX_BTNode::GetAttrLength(){
+    return attributeLength;
+}
 AttrType IX_BTNode::GetType() {
     return attributeType;
 }
 
-int IX_BTNode::GetAttrLength() {
-    return attributeLength;
-}
-
-std::ostream& operator<<(std::ostream &os, IX_BTNode &a) {
-    PageNum pn = 0;
-    a.GetNodeRID().GetPageNum(pn);
-    os << a.GetLeft() << "<-" << pn << "{";
-    for (int pos = 0; pos < a.GetKeysNum(); pos++) {
-        void * k = NULL;
-        a.GetKey(pos, k);
-        os << "(";
-        if (a.GetType() == INT)
-            os << *((int*) k);
-        if (a.GetType() == FLOAT)
-            os << *((float*) k);
-        if (a.GetType() == STRING) {
-            for (int i = 0; i < a.GetAttrLength(); i++)
-                os << ((char*) k)[i];
-        }
-        PageNum P;
-        a.GetRid(pos).GetPageNum(P);
-        SlotNum S;
-        a.GetRid(pos).GetSlotNum(S);
-        os << "," << P << " " << S << "), ";
-
+std::ostream& operator<<(std::ostream &os,IX_BTNode &a){
+    os << a.GetLeft() << "<-"
+       << a.GetNodeRID().GetPage()  << "{";
+  for (int pos = 0; pos <a.GetKeysNum(); pos++) {
+    void * k = NULL; a.GetKey(pos, k);
+    os << "(";
+    if(a.GetType()== INT )
+      os << *((int*)k);
+    if(a.GetType() == FLOAT )
+      os << *((float*)k);
+    if(a.GetType() == STRING ) {
+      for(int i=0; i < a.GetAttrLength(); i++)
+        os << ((char*)k)[i];
     }
-    os << "}" << "->" << a.GetRight();
+    PageNum P;
+    a.GetRid(pos).GetPageNum(P);
+    SlotNum S;
+    a.GetRid(pos).GetSlotNum(S);
+    os << "," <<P<<" "<<S<< "), ";
+    
+  }
+    os <<"}"<< "->"<< a.GetRight();
     return os;
 }
-
-
