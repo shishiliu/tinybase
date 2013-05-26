@@ -37,24 +37,26 @@ RC TestSort() {
 int main()
 {
    static const char cstTEST_FILE[] = "TEST_FILE";
+   bool aborted = false;
    RC rc = OK_RC;
    PF_Manager pfm;
    PF_FileHandle fh1;
    PF_PageHandle ph;
-   if (OK_RC != (rc = pfm.CreateFile(cstTEST_FILE))) {
-      return 0;
-   }
-   if (OK_RC != (rc = pfm.OpenFile(cstTEST_FILE, fh1))) {
-      return 0;
-   }
-   if (OK_RC != (rc = fh1.AllocatePage(ph))) {
-      return 0;
-   }
    PageNum pageNum;
-   ph.GetPageNum(pageNum);
-   fh1.MarkDirty(pageNum);
-   fh1.UnpinPage(pageNum);
-   TestInsert(ph);
-   pfm.CloseFile(fh1);
+   aborted = (OK_RC != (rc = pfm.CreateFile(cstTEST_FILE)));
+   aborted = aborted || (OK_RC != (rc = pfm.OpenFile(cstTEST_FILE, fh1)));
+   aborted = aborted || (OK_RC != (rc = fh1.AllocatePage(ph)));
+   aborted = aborted || (OK_RC != (rc = TestInsert(ph)));
+   aborted = aborted || (OK_RC != (rc = ph.GetPageNum(pageNum)));
+   aborted = aborted || (OK_RC != (rc = fh1.MarkDirty(pageNum)));
+   aborted = aborted || (OK_RC != (rc = fh1.UnpinPage(pageNum)));
+   aborted = aborted || (OK_RC != (rc = pfm.CloseFile(fh1)));
+   aborted = aborted || (OK_RC != (rc = pfm.DestroyFile(cstTEST_FILE)));
+   if (aborted) {
+       cout << "Some problem occurred" << endl;
+   }
+   else {
+        cout << "TEST SUCCESS" << endl;   
+   }
    return rc;
 }
