@@ -11,6 +11,7 @@
 #include "pf.fwd.h"
 #include "rm_rid.h"
 #include <string.h>
+#include <iosfwd>
 ////////////////////////////////////////////////////////////////////
 //
 // IX_BTNode: IX B+ Tree interface
@@ -48,7 +49,7 @@ public:
     int GetOrder();
     AttrType GetType();
     int GetAttrLength();
-    friend std::ostream &operator<<(std::ostream &os,IX_BTNode &a);
+    friend std::ostream &operator<<(std::ostream &,IX_BTNode &);
 private:
     char *pData;
     char* keys; //the table of key value according to the attribute
