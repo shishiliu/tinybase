@@ -58,6 +58,7 @@ RC Test1(void);
 RC Test2(void);
 RC Test3(void);
 RC Test4(void);
+RC Test5(void);
 
 void PrintError(RC rc);
 void LsFiles(char *fileName);
@@ -75,13 +76,14 @@ RC PrintIndex(IX_IndexHandle &ih);
 //
 // Array of pointers to the test functions
 //
-#define NUM_TESTS       3               // number of tests
+#define NUM_TESTS       5               // number of tests
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
    Test1,
    Test2,
    Test3,
-   Test4
+   Test4,
+   Test5,
 };
 
 //
@@ -107,6 +109,7 @@ int main(int argc, char *argv[])
    ixm.DestroyIndex(FILENAME, 1);
    ixm.DestroyIndex(FILENAME, 2);
    ixm.DestroyIndex(FILENAME, 3);
+   ixm.DestroyIndex(FILENAME, 4);
 
    // If no argument given, do all tests
    if (argc == 1) {
@@ -221,6 +224,11 @@ RC InsertIntEntries(IX_IndexHandle &ih, int nEntries)
    for(i = 0; i < nEntries; i++) {
       value = values[i] + 1;
       RID rid(value, value*2);
+
+//      printf("value:%d\n",value);
+//      printf("page numbre:%d\n",rid.Page());
+//      printf("page numbre:%d\n",rid.Page());
+
       if ((rc = ih.InsertEntry((void *)&value, rid)))
          return (rc);
 
@@ -496,11 +504,31 @@ RC Test1(void)
    IX_IndexHandle ih;
 
    printf("Test 1: create, open, close, delete an index... \n");
-
+/*
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = ixm.CloseIndex(ih)))
       return (rc);
+*/
+   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))))
+	{
+		printf("error in creatIndex\n");
+		return (rc);
+	}    
+   printf("IX_CreatIndex test OK!\n");
+   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
+	{
+		printf("error in OpenIndex\n");
+		return (rc);
+	}
+   printf("IX_OpenIndex test OK!\n");
+   if ((rc = ixm.CloseIndex(ih)))
+	{
+		printf("error in CloseIndex\n");
+		return (rc);
+	}
+   printf("IX_CloseIndex test OK!\n");
+
 
    LsFiles(FILENAME);
 
@@ -522,6 +550,7 @@ RC Test2(void)
 
    printf("Test2: Insert a few integer entries into an index... \n");
 
+    //standard test
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = InsertIntEntries(ih, FEW_ENTRIES)) ||
@@ -672,5 +701,61 @@ RC Test4(void)
       return (rc);
 
    printf("Passed Test 4\n\n");
+   return (0);
+}
+
+//
+// Test5 tests inserting a large integer entries into the index.
+//
+RC Test5(void)
+{
+   RC rc;
+   IX_IndexHandle ih;
+   int index=0;
+
+   printf("Test5: Insert a few integer entries into an index... \n");
+
+
+   //my test
+   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
+         (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
+         //(rc = InsertIntEntries(ih, FEW_ENTRIES)))
+         (rc = InsertIntEntries(ih, MANY_ENTRIES)))
+   {
+        return (rc);
+   }
+
+   //printf("b+ tree:\n");
+   //RID rid;
+   //ih.Print(-1,rid);
+   ih.PrintHeader();
+
+   if(rc = ixm.CloseIndex(ih))
+   {
+      return (rc);
+   }
+
+   //my test continus
+   if (rc = ixm.OpenIndex(FILENAME, index, ih))
+   {
+        return (rc);
+   }
+
+//   printf("b+ tree:\n");
+//   RID rid;
+//   ih.Print(-1,rid);
+   ih.PrintHeader();
+
+   if(rc = ixm.CloseIndex(ih))
+   {
+      return (rc);
+   }
+
+   LsFiles(FILENAME);
+
+   if ((rc = ixm.DestroyIndex(FILENAME, index)))
+      return (rc);
+
+   printf("Passed Test 2\n\n");
    return (0);
 }

@@ -5,7 +5,7 @@
 //
 
 #include "ix_internal.h"
-
+#include <stdio.h>
 IX_IndexHandle::IX_IndexHandle()
 {
    // Initialize member variables
@@ -54,11 +54,13 @@ RC IX_IndexHandle::Open(PF_FileHandle &fileHandle)
         if (rc = GetNewPage(pageNum))
             return rc;
         fileHdr.firstFreePage = pageNum;
+        SetHeight(1);
     }
     //if root already exists
     else
     {
         newPage = false;
+        SetHeight(fileHdr.height); // do all other init
     }
 
     PF_PageHandle rootPageHandle;
@@ -69,8 +71,6 @@ RC IX_IndexHandle::Open(PF_FileHandle &fileHandle)
 
     root = new BTNode(fileHdr.attrType, fileHdr.attrLength,rootPageHandle, newPage, PF_PAGE_SIZE);
 
-    fileHdr.height++;
-    path = new BTNode* [fileHdr.height];
     path[0]=root;
 
     fileHdr.order = root->GetMaxKeys();
@@ -78,6 +78,7 @@ RC IX_IndexHandle::Open(PF_FileHandle &fileHandle)
     RC invalid = IsValid(); if(invalid) return invalid;
 
     treeLargest = (void*) new char[fileHdr.attrLength];
+
     if(!newPage) {
       BTNode * node = FindLargestLeaf();
       // set treeLargest
@@ -93,6 +94,24 @@ RC IX_IndexHandle::Open(PF_FileHandle &fileHandle)
 RC IX_IndexHandle::Close()
 {
     bFileOpen = false;
+    if(pathP != NULL) 
+    {
+      delete [] pathP;
+      pathP = NULL;
+    }
+    if(path != NULL) 
+    {
+      // path[0] is root
+      for (int i = 1; i < fileHdr.height; i++) 
+        if(path[i] != NULL) 
+        {
+          if(pfFileHandle != NULL)
+            pfFileHandle->UnpinPage(path[i]->GetPageRID().Page());
+            // delete path[i]; - better leak than crash
+        }
+      delete [] path;
+      path = NULL;
+    }
     if(treeLargest!=NULL)
     {
         //delete treeLargest;
@@ -246,14 +265,6 @@ RC IX_IndexHandle::GetThisPage(PageNum p, PF_PageHandle& ph) const {
   return 0;
 }
 
-// Insert a new index entry: need to change the name "pRecordData" to "pEntryData"
-/*For this and the following two methods, it is incorrect if the IX_IndexHandle object for which the method is called does not refer to an open index.
-
-//This method should insert a new entry into the index associated with IX_IndexHandle.
-//parameter pData points to the attribute value to be inserted into the index,
-//parameter rid identifies the record with that value to be added to the index.
-//Hence, this method effectively inserts an entry for the pair (*pData,rid) into the index. (The index should contain only the record's RID, not the record itself.) If the indexed attribute is a character string of length n, then you may assume that *pData is exactly n bytes long; similarly for parameter *pData in the next method. This method should return a nonzero code if there is already an entry for (*pData,rid) in the index.
-*/
 //
 // InsertEntry
 //
@@ -307,16 +318,17 @@ RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid)
       }
       // copy from pData into new treeLargest
       memcpy(treeLargest, pData, fileHdr.attrLength);
-      std::cerr << "new treeLargest " << *(int*)treeLargest << std::endl;
+      //std::cerr << "new treeLargest " << *(int*)treeLargest << std::endl;
     }
 
     int result = node->Insert(pData, rid);
     // no room in node - deal with overflow - non-root
     void * failedKey = pData;
     RID failedRid = rid;
+
     while(result == -1)
     {
-      // std::cerr << "non root overflow" << std::endl;
+      //std::cerr << "non root overflow" << std::endl;
 
       char * charPtr = new char[fileHdr.attrLength];
       void * oldLargest = charPtr;
@@ -326,8 +338,8 @@ RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid)
       else
         node->CopyKey(node->GetNumKeys()-1, oldLargest);
 
-      // std::cerr << "nro largestKey was " << *(int*)oldLargest  << std::endl;
-      // std::cerr << "nro numKeys was " << node->GetNumKeys()  << std::endl;
+       //std::cerr << "nro largestKey was " << *(int*)oldLargest  << std::endl;
+       //std::cerr << "nro numKeys was " << node->GetNumKeys()  << std::endl;
       delete [] charPtr;
 
       // make new  node
@@ -401,11 +413,14 @@ RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid)
       newNode = NULL;
     } // while
 
-    if(level >= 0) {
+    if(level >= 0) 
+    {
       // insertion done
       return 0;
-    } else {
-      // std::cerr << "root split happened" << std::endl;
+    } 
+    else 
+    {
+       std::cerr << "root split happened" << std::endl;
 
       // unpin old root page
       RC rc = pfFileHandle->UnpinPage(fileHdr.firstFreePage);
@@ -471,12 +486,12 @@ BTNode* IX_IndexHandle::FindLeaf(const void *pData)
     return root;
   }
 
+  //height > 1
   for (int i = 1; i < fileHdr.height; i++)
   {
-     std::cerr << "i was " << i << std::endl;
-     std::cerr << "pData was " << *(int*)pData << std::endl;
-
-
+    //std::cerr << "i was " << i << std::endl;
+    //std::cerr << "pData was " << *(int*)pData << std::endl;
+       
     RID r = path[i-1]->FindAddrAtPosition(pData);// return position if key will fit in a particular position
                                                  // return (-1, -1) if there was an error
                                                  // if there are dups - this will return rightmost position
@@ -484,7 +499,6 @@ BTNode* IX_IndexHandle::FindLeaf(const void *pData)
     int pos = path[i-1]->FindKeyPosition(pData);// return position if key will fit in a particular position
                                                 // return -1 if there was an error
                                                 // if there are dups - this will return rightmost position
-
 
 
     if(r.Page() == -1)
@@ -537,7 +551,7 @@ void IX_IndexHandle::SetHeight(const int& h)
 
   fileHdr.height = h;
 
-  //path = new BTNode* [fileHdr.height];
+  path = new BTNode* [fileHdr.height];
 
   for(int i=1;i < fileHdr.height; i++)
     path[i] = NULL;
@@ -600,4 +614,20 @@ void IX_IndexHandle::Print(int level, RID r) const {
   if(level == 1 && node->GetRight() == -1)
     std::cerr << std::endl; //blank after rightmost leaf
   if(node!=NULL) delete node;
+}
+
+void IX_IndexHandle::PrintHeader() const {
+ 	
+    if(bFileOpen)
+    {
+	std::cerr<<"State:Index is open."<<std::endl; 
+    }
+    else
+    {
+	std::cerr<<"State:Index is closed."<<std::endl; 
+    }
+    std::cerr<<"Index Root Page number:"<<fileHdr.firstFreePage<<std::endl;
+    std::cerr<<"Index #Pages:"<<fileHdr.numPages<<std::endl;
+    std::cerr<<"Index BTNode order:"<<fileHdr.order<<std::endl;
+    std::cerr<<"Index B+ Tree Height"<<fileHdr.height<<std::endl;
 }
