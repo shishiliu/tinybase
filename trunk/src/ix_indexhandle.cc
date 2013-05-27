@@ -5,7 +5,7 @@
 //
 
 #include "ix_internal.h"
-#include <stdio.h>
+
 IX_IndexHandle::IX_IndexHandle()
 {
    // Initialize member variables
@@ -59,7 +59,6 @@ RC IX_IndexHandle::Open(PF_FileHandle &fileHandle)
     else
     {
         newPage = false;
-        printf("hello world============\n\n");
     }
 
     PF_PageHandle rootPageHandle;
