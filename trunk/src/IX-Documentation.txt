@@ -49,10 +49,6 @@ closeIndex()
 insertEntry()
 deleteEntry()
 
-(4)ix_test
-./ix_test 1： test indexCreat,indexDestroy, indexOpen, indexClose
-./ix_test 2: test index insert few data
-./ix_test 5: test index insert large data
 
 
 

@@ -39,7 +39,8 @@ extern void PF_Statistics();
 //
 #define FILE1	"file1"
 
-RC TestPF() {
+RC TestPF()
+{
    PF_Manager pfm;
    PF_FileHandle fh;
    PF_PageHandle ph;
@@ -55,23 +56,22 @@ RC TestPF() {
    cout << "Opening file: " << FILE1 << "\n";
 
    if ((rc = pfm.OpenFile(FILE1, fh)))
-      return (rc);
+      return(rc);
 
    cout << "Allocating " << PF_BUFFER_SIZE << " pages.\n";
 
    for (i = 0; i < PF_BUFFER_SIZE; i++) {
       if ((rc = fh.AllocatePage(ph)) ||
-              (rc = ph.GetData(pData)) ||
-              (rc = ph.GetPageNum(pageNum)))
-         return (rc);
+            (rc = ph.GetData(pData)) ||
+            (rc = ph.GetPageNum(pageNum)))
+         return(rc);
 
       if (i != pageNum) {
-         cout << "Page number incorrect: " << (int) pageNum << " " << i << "\n";
+         cout << "Page number incorrect: " << (int)pageNum << " " << i << "\n";
          exit(1);
       }
       // Put only the page number into the page
-      memcpy(pData, (char *) &pageNum, sizeof (PageNum));
-      fh.MarkDirty(pageNum);
+      memcpy(pData, (char *)&pageNum, sizeof(PageNum));
    }
 
    // Now ask for the same pages again
@@ -79,12 +79,12 @@ RC TestPF() {
 
    for (i = 0; i < PF_BUFFER_SIZE; i++) {
       if ((rc = fh.GetThisPage(i, ph)) ||
-              (rc = ph.GetData(pData)) ||
-              (rc = ph.GetPageNum(pageNum)))
-         return (rc);
+            (rc = ph.GetData(pData)) ||
+            (rc = ph.GetPageNum(pageNum)))
+         return(rc);
       if (i != pageNum) {
-         cout << "Page number incorrect: " << (int) pageNum
-                 << " " << i << "\n";
+         cout << "Page number incorrect: " << (int)pageNum
+            << " " << i << "\n";
          exit(1);
       }
    }
@@ -94,28 +94,32 @@ RC TestPF() {
    // Also that PF_PAGENOTFOUND = PF_BUFFER_SIZE.
 #ifdef PF_STATS
    cout << "Verifying the statistics for buffer manager: ";
-   int iGP = pStatisticsMgr->Get(PF_GETPAGE);
-   int iPF = pStatisticsMgr->Get(PF_PAGEFOUND);
-   int iPNF = pStatisticsMgr->Get(PF_PAGENOTFOUND);
+   int *piGP = pStatisticsMgr->Get(PF_GETPAGE);
+   int *piPF = pStatisticsMgr->Get(PF_PAGEFOUND);
+   int *piPNF = pStatisticsMgr->Get(PF_PAGENOTFOUND);
 
-   if (iGP != PF_BUFFER_SIZE) {
-      cout << "Number of GetPages is incorrect! (" << iGP << ")\n";
+   if (piGP && (*piGP != PF_BUFFER_SIZE)) {
+      cout << "Number of GetPages is incorrect! (" << *piGP << ")\n";
       // No built in error code for this
       exit(1);
    }
-   if (iPF != PF_BUFFER_SIZE) {
+   if (piPF && (*piPF != PF_BUFFER_SIZE)) {
       cout << "Number of pages found in the buffer is incorrect! (" <<
-              iPF << ")\n";
+        *piPF << ")\n";
       // No built in error code for this
       exit(1);
    }
-   if (iPNF != 0) {
+   if (piPNF!=NULL) {
       cout << "Number of pages not found in the buffer is incorrect! (" <<
-              iPNF << ")\n";
+        *piPNF << ")\n";
       // No built in error code for this
       exit(1);
    }
    cout << " Correct!\n";
+
+   delete piGP;
+   delete piPF;
+   delete piPNF;
 
 #endif                 // PF_STATS
 
@@ -123,29 +127,31 @@ RC TestPF() {
    for (i = 0; i < PF_BUFFER_SIZE; i++)
       // Must unpine the pages twice
       if ((rc = fh.UnpinPage(i)) ||
-              (rc = fh.UnpinPage(i)))
-         return (rc);
+          (rc = fh.UnpinPage(i)))
+         return(rc);
 
-   fh.FlushPages();
    // Confirm that the buffer manager has written the correct number of
    // pages.
 #ifdef PF_STATS
    cout << "Verifying the write statistics for buffer manager: ";
-   int iWP = pStatisticsMgr->Get(PF_WRITEPAGE);
-   int iRP = pStatisticsMgr->Get(PF_READPAGE);
+   int *piWP = pStatisticsMgr->Get(PF_WRITEPAGE);
+   int *piRP = pStatisticsMgr->Get(PF_READPAGE);
 
-   if (iWP != PF_BUFFER_SIZE) {
-      cout << "Number of write pages is incorrect! (" << iGP << ")\n";
+   if (piWP && (*piWP != PF_BUFFER_SIZE)) {
+      cout << "Number of write pages is incorrect! (" << *piGP << ")\n";
       // No built in error code for this
       exit(1);
    }
-   if (iRP != 0) {
+   if (piRP!=NULL) {
       cout << "Number of pages read in is incorrect! (" <<
-              iPNF << ")\n";
+        *piPNF << ")\n";
       // No built in error code for this
       exit(1);
    }
    cout << " Correct!\n";
+
+   delete piWP;
+   delete piRP;
 
 #endif          // PF_STATS
 
@@ -156,32 +162,32 @@ RC TestPF() {
    cout << "out the buffer pool.\n";
    for (i = 0; i < PF_BUFFER_SIZE; i++) {
       if ((rc = fh.AllocatePage(ph)) ||
-              (rc = ph.GetData(pData)) ||
-              (rc = ph.GetPageNum(pageNum)))
-         return (rc);
-      if (i + PF_BUFFER_SIZE != pageNum) {
-         cout << "Page number incorrect: " << (int) pageNum
-                 << " " << i << "\n";
+            (rc = ph.GetData(pData)) ||
+            (rc = ph.GetPageNum(pageNum)))
+         return(rc);
+      if (i+PF_BUFFER_SIZE != pageNum) {
+         cout << "Page number incorrect: " << (int)pageNum
+            << " " << i << "\n";
          exit(1);
       }
-      if ((rc = fh.UnpinPage(i + PF_BUFFER_SIZE)))
-         return (rc);
+      if ((rc = fh.UnpinPage(i+PF_BUFFER_SIZE)))
+         return(rc);
    }
 
    // Now refetch the original pages
    cout << "Now asking for the original pages again.\n";
    for (i = 0; i < PF_BUFFER_SIZE; i++) {
       if ((rc = fh.GetThisPage(i, ph)) ||
-              (rc = ph.GetData(pData)) ||
-              (rc = ph.GetPageNum(pageNum)))
-         return (rc);
-      if (i != pageNum) {
-         cout << "Page number incorrect: " << (int) pageNum
-                 << " " << i << "\n";
+            (rc = ph.GetData(pData)) ||
+            (rc = ph.GetPageNum(pageNum)))
+         return(rc);
+      if (i!= pageNum) {
+         cout << "Page number incorrect: " << (int)pageNum
+            << " " << i << "\n";
          exit(1);
       }
       if ((rc = fh.UnpinPage(i)))
-         return (rc);
+         return(rc);
    }
 
    // The previous refetch should have resulted in the buffer manager
@@ -189,15 +195,17 @@ RC TestPF() {
    // not have had any of the pages.
 #ifdef PF_STATS
    cout << "Verifying that pages were not found in buffer pool: ";
-   iPNF = pStatisticsMgr->Get(PF_PAGENOTFOUND);
+   piPNF = pStatisticsMgr->Get(PF_PAGENOTFOUND);
 
-   if (iPNF != PF_BUFFER_SIZE) {
+   if (piPNF && (*piPNF != PF_BUFFER_SIZE)) {
       cout << "Number of pages not found in the buffer is incorrect! (" <<
-              iPF << ")\n";
+        *piPF << ")\n";
       // No built in error code for this
       exit(1);
    }
    cout << " Correct!\n";
+
+   delete piPNF;
 #endif          // PF_STATS
 
    // Now we will Flush the buffer manager to disk and count the number of
@@ -208,22 +216,24 @@ RC TestPF() {
 
 #ifdef PF_
    cout << "Testing flush to disk: ";
-   int iFP = pStatisticsMgr->Get(PF_FLUSHPAGES);
-   iWP = pStatisticsMgr->Get(PF_WRITEPAGES);
+   int *piFP = pStatisticsMgr->Get(PF_FLUSHPAGES);
+   piWP = pStatisticsMgr->Get(PF_WRITEPAGES);
 
-   if (iFP != 1) {
+   if (piFP && (*piFP != 1)) {
       cout << "Number of times Flush pages routine has been called " <<
-              "is incorrect! (" << iFP << ")\n";
+         "is incorrect! (" << *piFP << ")\n";
       // No built in error code for this
       exit(1);
    }
-   if (iWP != 2 * PF_BUFFER_SIZE) {
-      cout << "Number of written pages is incorrect! (" << iWP << ")\n";
+   if (piWP && (*piWP != 2*PF_BUFFER_SIZE)) {
+      cout << "Number of written pages is incorrect! (" << *piWP << ")\n";
       // No built in error code for this
       exit(1);
    }
    cout << " Correct!\n";
 
+   delete piFP;
+   delete piWP;
 #endif
 
 
@@ -235,20 +245,22 @@ RC TestPF() {
    // increased!  Since everything was already flushed.
 #ifdef PF_STATS
    cout << "Testing number of pages written to disk: ";
-   iWP = pStatisticsMgr->Get(PF_WRITEPAGE);
+   piWP = pStatisticsMgr->Get(PF_WRITEPAGE);
 
    // This number should not have increased since last time!
-   if (iWP != 2 * PF_BUFFER_SIZE) {
-      cout << "Number of written pages is incorrect! (" << iWP << ")\n";
+   if (piWP && (*piWP != 2*PF_BUFFER_SIZE)) {
+      cout << "Number of written pages is incorrect! (" << *piWP << ")\n";
       // No built in error code for this
       exit(1);
    }
    cout << " Correct!\n";
+
+   delete piWP;
 #endif
 
    // Close the file
    if ((rc = pfm.CloseFile(fh)))
-      return (rc);
+      return(rc);
 
    // If we are dealing with statistics then we might as well output the
    // final numbers
@@ -260,7 +272,8 @@ RC TestPF() {
    return (0);
 }
 
-int main() {
+int main()
+{
    RC rc;
 
    // Write out initial starting message

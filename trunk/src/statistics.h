@@ -45,29 +45,29 @@ typedef int RC;
 const int STAT_BASE = 9000;
 #endif
 
-#include <list>
-#include <string>
+// This include must come after the common defines
+#include "linkedlist.h"    // Template class for the link list
 
 // A single statistic will be tracked by a Statistic class
 class Statistic {
 public:
     Statistic();
     ~Statistic();
-    Statistic(const std::string& sName);
+    Statistic(const char *psName);
+
+    // Copy constructor
+    Statistic(const Statistic &stat);
+
+    // Equality constructor
+    Statistic& operator=(const Statistic &stat);
 
     // Check for equality between a Statistic and a name based upon the
     // names given to the current statistic.
-    Boolean operator==(const std::string& sName_) const;
-    
-    const std::string& getKey() const;
-    
-    int getValue() const;
-    
-    void setValue(int iValue);
-private:
+    Boolean operator==(const char *psName_) const;
+
     // The name or key given to the statistic that this structure is
     // tracking
-    std::string sName;
+    char *psKey;
 
     // Currently, I have only allowed the statistic to track integer values.
     // Initial value will be 0.
@@ -101,7 +101,7 @@ public:
 
     // Get will return the value associated with a particular statistic.
     // Caller is responsible for deleting the memory returned.
-    int Get(const char *psKey);
+    int *Get(const char *psKey);
 
     // Print out a specific statistic
     RC Print(const char *psKey);
@@ -116,7 +116,7 @@ public:
     void Reset();
 
 private:
-    std::list<Statistic> llStats;
+    LinkList<Statistic> llStats;
 };
 
 //

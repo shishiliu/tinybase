@@ -30,26 +30,39 @@ public:
     // record contents.
     RC GetData(char *&aData) const;
     PageNum GetLeft();
+    PageNum GetLeftFromPage();
     void SetLeft(PageNum aPageId);
+    void SetLeftToPage(PageNum p);
     PageNum GetRight();
+    PageNum GetRightFromPage();
     void SetRight(PageNum aPageId);
+    void SetRightToPage(PageNum p);
+    int GetKeysNumFromPage();
+    void SetKeysNumToPage(int aNumKeys);
     RC InsertNode(const void* aKey, const RID & aRid);
-    RC DeleteNode(const void* aKey);
+    RC DeleteNode(const void* aKey,int kpos);
     RC MergeNode(IX_BTNode* aNode);
     RC SplitNode(IX_BTNode* aNewNode);
     int GetKeysNum();
-    RC GetKey(int iPos, void * & aKey);
+    RC GetKey(int iPos, void * & aKey) const;
     RC SetKey(int iPos, const void* aKey);
-    int FindKey(const void* &aKey);
+    int FindKey(const void* &aKey) const;
     int FindKeyExact(const void* &aKey, const RID& aRid);
-    int CompareKey(const void * aKey, const void * bKey);
+    RID FindAddrAtPosition(const void* &key) const;
+    RID FindAddr(const void* &key) const;
+    RID GetAddr(const int pos) const;
+    int FindKeyPosition(const void* &key) const;
+    int CompareKey(const void * aKey, const void * bKey) const;
     bool TestSorted();
     RID GetRid(const int iPos);
     RID GetNodeRID();
     int GetOrder();
+    int CopyKey(int pos, void* toKey) const;
     AttrType GetType();
     int GetAttrLength();
-    friend std::ostream &operator<<(std::ostream &,IX_BTNode &);
+    friend std::ostream &operator<<(std::ostream &os,IX_BTNode &a);
+    void* LargestKey() const;
+    int Destroy();
 private:
     char *pData;
     char* keys; //the table of key value according to the attribute

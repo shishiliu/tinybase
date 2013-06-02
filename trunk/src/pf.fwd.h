@@ -22,7 +22,6 @@ typedef int PageNum;
 // Unfortunately, we cannot use sizeof(PF_PageHdr) here, but it is an
 // int and we simply use that.
 //
-const int PF_PAGE_SIZE = 4096 - sizeof(int);
 
 class PF_PageHandle;
 

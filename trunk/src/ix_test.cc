@@ -34,7 +34,7 @@ using namespace std;
 #define BADFILE      "/abc/def/xyz"   // bad file name
 #define STRLEN       39               // length of strings to index
 #define FEW_ENTRIES  20
-#define MANY_ENTRIES 1000
+#define MANY_ENTRIES 600
 #define NENTRIES     5000             // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
 // reports when adding lots of entries
@@ -228,10 +228,16 @@ RC InsertIntEntries(IX_IndexHandle &ih, int nEntries)
    printf("             Adding %d int entries\n", nEntries);
    ran(nEntries);
    for(i = 0; i < nEntries; i++) {
+       
+       if(i==340){
+           
+           cout<<"temp break point";
+           
+       }
       value = values[i] + 1;
       RID rid(value, value*2);
 
-        printf("Insert Entry value:%d\n",value);
+//        printf("Insert Entry value:%d\n",value);
 //      printf("page numbre:%d\n",rid.Page());
 //      printf("page numbre:%d\n",rid.Page());
 
@@ -567,13 +573,10 @@ RC Test2(void)
          (rc = InsertIntEntries(ih, FEW_ENTRIES)) ||
          (rc = ixm.CloseIndex(ih)) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-
-         // ensure inserted entries are all there
-         (rc = VerifyIntIndex(ih, 0, FEW_ENTRIES, TRUE)) ||
-
-         // ensure an entry not inserted is not there
-         (rc = VerifyIntIndex(ih, FEW_ENTRIES, 1, FALSE)) ||
          (rc = ixm.CloseIndex(ih)))
+   
+       
+   
       return (rc);
 
    LsFiles(FILENAME);
@@ -592,25 +595,40 @@ RC Test3(void)
 {
    RC rc;
    int index=0;
-   int nDelete = FEW_ENTRIES * 8/10;
+   int nDelete = MANY_ENTRIES * 8/10;
    IX_IndexHandle ih;
 
    printf("Test3: Delete a few integer entries from an index... \n");
 
-
-
-   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
+   /*if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = InsertIntEntries(ih, FEW_ENTRIES)) ||
          (rc = DeleteIntEntries(ih, nDelete)) ||
          (rc = ixm.CloseIndex(ih)) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-         // ensure deleted entries are gone
+
+       // ensure deleted entries are gone
          (rc = VerifyIntIndex(ih, 0, nDelete, FALSE)) ||
          // ensure non-deleted entries still exist
          (rc = VerifyIntIndex(ih, nDelete, FEW_ENTRIES - nDelete, TRUE)) ||
          (rc = ixm.CloseIndex(ih)))
-      return (rc);
+      return (rc);*/
+   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
+         (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
+         (rc = InsertIntEntries(ih, MANY_ENTRIES)))
+       return (rc);
+   ih.PrintHeader();
+   RID r;
+   ih.Print(-1,r);
+   if(rc = ixm.CloseIndex(ih))
+        return (rc);
+
+   if ((rc = ixm.OpenIndex(FILENAME, index, ih)) ||
+         (rc = DeleteIntEntries(ih, nDelete)))
+       return (rc);
+   ih.PrintHeader();
+   if(rc = ixm.CloseIndex(ih))
+        return (rc);
 
    LsFiles(FILENAME);
 
@@ -733,10 +751,18 @@ RC Test5(void)
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          //(rc = InsertIntEntries(ih, MANY_ENTRIES)))
-         (rc = InsertStringEntries(ih, MANY_ENTRIES)))
+         (rc = InsertStringEntries(ih, MANY_ENTRIES))
+       )
    {
-        return (rc);
+       ih.PrintHeader();
+       RID r;
+       ih.Print(-1,r);
+       return (rc);
    }
+       ih.PrintHeader();
+       RID r;
+       ih.Print(-1,r);
+       return (rc);
 
    if(rc = ixm.CloseIndex(ih))
    {

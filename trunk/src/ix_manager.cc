@@ -243,8 +243,7 @@ RC IX_Manager::OpenIndex(const char *fileName, int indexNo, IX_IndexHandle& inde
 
    // TODO: cannot guarantee the validity of file header at this time
 
-   // Set file header to be not changed
-   indexHandle.bHdrChanged = FALSE;
+   
 
    // Return ok
    return (0);

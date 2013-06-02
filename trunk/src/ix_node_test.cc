@@ -55,7 +55,7 @@ RC TestDelete(PF_PageHandle &pageHandler) {
     node.InsertNode(&key1, rid1);
    node.InsertNode(&key2, rid2);
    node.InsertNode(&key3, rid3);
-   node.DeleteNode(&key1);
+   node.DeleteNode(&key1,-1);
    void *pResultKey = 0;
    node.GetKey(0, pResultKey);
    bool aborted = *static_cast<int*>(pResultKey) != key2;
@@ -77,8 +77,8 @@ RC TestMerge(PF_PageHandle &pageHandler1,PF_PageHandle &pageHandler2) {
    node1.InsertNode(&key2, rid2);
    node1.InsertNode(&key3, rid3);
    cout<<node1<<endl;
-   PageNum id1 = node1.GetNodeRID().GetPage();
-   PageNum id2 = node2.GetNodeRID().GetPage();
+   PageNum id1 = node1.GetNodeRID().Page();
+   PageNum id2 = node2.GetNodeRID().Page();
    node1.SetRight(id2);
    node2.SetLeft(id1);
     int  key4 = 2;
@@ -102,8 +102,8 @@ RC TestMerge(PF_PageHandle &pageHandler1,PF_PageHandle &pageHandler2) {
 RC TestSplit(PF_PageHandle &pageHandler1,PF_PageHandle &pageHandler2){
      IX_BTNode node1(INT, sizeof(int), pageHandler1, true);
      IX_BTNode node2(INT, sizeof(int), pageHandler2, true);
-     node1.SetRight(node2.GetNodeRID().GetPage());
-     node2.SetLeft(node1.GetNodeRID().GetPage());
+     node1.SetRight(node2.GetNodeRID().Page());
+     node2.SetLeft(node1.GetNodeRID().Page());
      int  key1 = 1;
      RID rid1(1, 1);
      int key2 = 3;
