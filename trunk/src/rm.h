@@ -146,7 +146,7 @@ public:
     RM_Manager    (PF_Manager &pfm);
     ~RM_Manager   ();
 
-    RC CreateFile (const char *fileName, int recordSize);
+    RC CreateFile (const char *fileName, unsigned recordSize);
     RC DestroyFile(const char *fileName);
     RC OpenFile   (const char *fileName, RM_FileHandle &fileHandle);
 
