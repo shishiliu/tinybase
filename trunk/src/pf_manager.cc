@@ -186,6 +186,7 @@ err:
 //                    this function modifies local var's in fileHandle
 // Ret:  PF return code
 //
+
 RC PF_Manager::CloseFile(PF_FileHandle &fileHandle)
 {
    RC rc;
@@ -193,11 +194,9 @@ RC PF_Manager::CloseFile(PF_FileHandle &fileHandle)
    // Ensure fileHandle refers to open file
    if (!fileHandle.bFileOpen)
       return (PF_CLOSEDFILE);
-
    // Flush all buffers for this file and write out the header
    if ((rc = fileHandle.FlushPages()))
       return (rc);
-
    // Close the file
    if (close(fileHandle.unixfd) < 0)
       return (PF_UNIX);
@@ -205,6 +204,8 @@ RC PF_Manager::CloseFile(PF_FileHandle &fileHandle)
 
    // Reset the buffer manager pointer in the file handle
    fileHandle.pBufferMgr = NULL;
+
+
 
    // Return ok
    return 0;

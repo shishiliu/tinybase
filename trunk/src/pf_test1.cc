@@ -96,8 +96,8 @@ void PF_ConfirmStatistics() {
 //
 // Defines
 //
-#define FILE1	"file1"
-#define FILE2	"file2"
+#define FILE1   "file1"
+#define FILE2   "file2"
 
 //
 // Function declarations
@@ -177,7 +177,7 @@ RC PrintFile(PF_FileHandle &fh) {
       cout << "Got page: " << (int) pageNum << " " << (int) temp << "\n";
 
       //    if (memcmp(pData + PF_PAGE_SIZE - sizeof(PageNum),
-      //	       pData, sizeof(PageNum))) {
+      //               pData, sizeof(PageNum))) {
       //      memcpy(&temp, pData + PF_PAGE_SIZE - sizeof(PageNum), sizeof(PageNum));
       //      cout << "ERROR!" << (int)temp << "\n";
       //      return (-1);
@@ -521,6 +521,3 @@ int main() {
 
    return (0);
 }
-
-
-

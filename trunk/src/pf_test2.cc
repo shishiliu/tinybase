@@ -37,7 +37,7 @@ extern void PF_Statistics();
 //
 // Defines
 //
-#define FILE1	"file1"
+#define FILE1   "file1"
 
 RC TestPF() {
    PF_Manager pfm;
@@ -292,4 +292,3 @@ int main() {
 
    return (0);
 }
-

@@ -11,7 +11,16 @@
 // components will require the use of RID but not the rest of RM.
 
 #include "redbase.h"
-#include "rm_rid.fwd.h"
+
+//
+// PageNum: uniquely identifies a page in a file
+//
+typedef int PageNum;
+
+//
+// SlotNum: uniquely identifies a record in a page
+//
+typedef int SlotNum;
 
 //
 // RID: Record id interface
@@ -20,6 +29,9 @@ class RID {
 public:
     RID();                                         // Default constructor
     RID(PageNum pageNum, SlotNum slotNum);
+    // Copy constructor
+    RID(const RID &rid);
+
     ~RID();                                        // Destructor
     RID& operator=(const RID &rid);                // Overloaded =
     bool operator==(const RID &rid) const ;        // Overloaded ==
@@ -27,10 +39,12 @@ public:
     RC GetPageNum(PageNum &pageNum) const;         // Return page number
     RC GetSlotNum(SlotNum &slotNum) const;         // Return slot number
 
-private:
-    // Copy constructor
-   
+    PageNum Page() const          // Return page number
+    { return pageNum; }
+    SlotNum Slot() const          // Return slot number
+    { return slotNum; }
 
+private:
     PageNum pageNum;
     SlotNum slotNum;
 };

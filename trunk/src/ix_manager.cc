@@ -4,9 +4,7 @@
 // Author:      Shishi LIU (shishi.liu@enst.fr)
 //
 
-#include "ix.h"
 #include "ix_internal.h"
-#include "rm.h"
 #include "redbase.h"
 #include "pf.h"
 #include <stdio.h>
@@ -37,7 +35,7 @@ IX_Manager::~IX_Manager()
 //       Allocate a file header page and fill out some information
 // In:   fileName - name of file to create
 //       recordSize - fixed size of records
-// Ret:  RM_INVALIDRECSIZE or PF return code
+// Ret:  IX_INVALIDRECSIZE or PF return code
 //
 // Create a new Index
 
@@ -52,9 +50,9 @@ IX_Manager::~IX_Manager()
  * and it should be between 1 and MAXSTRINGLEN for attribute type STRING. 
  * This method should establish an empty index by creating the PF component file and initializing it appropriately. 
  */
-RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType, int attrLength, unsigned recordSize)
+RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType, int attrLength)
 {
-   RC rc = OK_RC;
+   RC rc;
    PF_FileHandle pfFileHandle;
    PF_PageHandle pageHandle;
    char* pData;
@@ -62,22 +60,19 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType,
    // 1.create a file with name "fileName.indexNo"
    // Note that PF_Manager::CreateFile() will take care of fileName
    // Call PF_Manager::CreateFile()
-   char indexFileName[20] = {'0'};//at the beginning, the length of the index name is fixed;
-   //int len3 = sprintf(index,"%s.%d",fileName,indexNo);
    if(indexNo < 0||fileName == NULL)
    {
        goto err_return;
-   }//specific the error
+   }//todo:specific the error
 
-   //char indexFileName[20] = {'0'};//at the beginning, the length of the index name is fixed;
-   //int len3 = sprintf(index,"%s.%d",fileName,indexNo);
+   char indexFileName[20];//at the beginning, the length of the index name is fixed;
+   sprintf(indexFileName,"%s.%d",fileName,indexNo);
    // Test: existing fileName, wrong permission
-   if (OK_RC != (rc = pPfm->CreateFile(indexFileName))) {
+   if ((rc = pPfm->CreateFile(indexFileName))) {
        goto err_return;
    }
 
-   // 2.analyze attribute type
-   // Sanity Check: attrType, attrLength
+//2.analyse attribute type:Sanity Check: attrType, attrLength
    switch (attrType) 
    {
       case INT:
@@ -99,62 +94,58 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType,
    }
 
    // Call PF_Manager::OpenFile()
-   if (OK_RC != (rc = pPfm->OpenFile(fileName, pfFileHandle))) {
+   if ((rc = pPfm->OpenFile(indexFileName, pfFileHandle))) {
       // Should not happen
       goto err_destroy;
    }
 
    // Allocate the header page (pageNum must be 0)
-   if (OK_RC != (rc = pfFileHandle.AllocatePage(pageHandle))) {
+   if ((rc = pfFileHandle.AllocatePage(pageHandle))) {
       // Should not happen
       goto err_close;
    }
 
    // Get a pointer where header information will be written
-   if (OK_RC != (rc = pageHandle.GetData(pData))) {
+   if ((rc = pageHandle.GetData(pData))) {
       // Should not happen
       goto err_unpin;
    }
 
    // Write the file header (to the buffer pool)
    fileHdr = (IX_FileHdr *)pData;
-   fileHdr->firstFree = RM_PAGE_LIST_END;
-   fileHdr->recordSize = recordSize;
-   fileHdr->numRecordsPerPage = (PF_PAGE_SIZE - sizeof(RM_PageHdr) - 1) 
-                                / (recordSize + 1.0/8);
-   if (fileHdr->recordSize * (fileHdr->numRecordsPerPage + 1) 
-       + fileHdr->numRecordsPerPage / 8 
-       <= PF_PAGE_SIZE - sizeof(RM_PageHdr) - 1) {
-      fileHdr->numRecordsPerPage++;
-   }
-   fileHdr->pageHeaderSize = sizeof(RM_PageHdr) 
-                             + (fileHdr->numRecordsPerPage + 7) / 8;
-   fileHdr->numRecords = 0;
+   fileHdr-> firstFreePage = IX_PAGE_LIST_END;
+   fileHdr->numPages = 1; // header page
+   fileHdr->pageSize = PF_PAGE_SIZE;
+   fileHdr->pairSize = attrLength + sizeof(RID);
+   fileHdr->order = -1;
+   fileHdr->height = 0;
+   fileHdr->attrType = attrType;
+   fileHdr->attrLength = attrLength;
 
    // Mark the header page as dirty
-   if (OK_RC != (rc = pfFileHandle.MarkDirty(RM_HEADER_PAGE_NUM))) {
+   if ((rc = pfFileHandle.MarkDirty(IX_HEADER_PAGE_NUM))) {
       // Should not happen
       goto err_unpin;
    }
    
    // Unpin the header page
-   if (OK_RC != (rc = pfFileHandle.UnpinPage(RM_HEADER_PAGE_NUM))) {
+   if ((rc = pfFileHandle.UnpinPage(IX_HEADER_PAGE_NUM))) {
       // Should not happen
       goto err_close;
    }
    
    // Call PF_Manager::CloseFile()
-   if (OK_RC != (rc = pPfm->CloseFile(pfFileHandle))) {
+   if ((rc = pPfm->CloseFile(pfFileHandle))) {
       // Should not happen
       goto err_destroy;
    }
 
    // Return ok
-   return OK_RC;
+   return (0);
 
    // Recover from inconsistent state due to unexpected error
 err_unpin:
-   pfFileHandle.UnpinPage(RM_HEADER_PAGE_NUM);
+   pfFileHandle.UnpinPage(IX_HEADER_PAGE_NUM);
 err_close:
    pPfm->CloseFile(pfFileHandle);
 err_destroy:
@@ -162,3 +153,177 @@ err_destroy:
 err_return:
    return (rc);
 }
+
+
+//
+// DestroyFile
+//
+// Desc: Delete a RM file named fileName (fileName must exist and not be open)
+// In:   fileName - name of file to delete
+// Ret:  PF return code
+//
+RC IX_Manager::DestroyIndex(const char *fileName, int indexNo)
+{
+    RC rc;
+    char indexFileName[20];//at the beginning, the length of the index name is fixed;
+    sprintf(indexFileName,"%s.%d",fileName,indexNo);
+    // Call PF_Manager::DestroyFile()
+    if (rc = pPfm->DestroyFile(indexFileName))
+    {
+       // Test: non-existing fileName, wrong permission
+       goto err_return;
+    }
+    // Return ok
+    return (0);
+
+    // Return ok
+    return (0);
+
+err_return:
+   // Return error
+   return (rc);
+}
+
+//
+// OpenFile
+//
+// Desc: Open the paged file whose name is "fileName.indexNo".
+//       Copy the file header information into a private variable in
+//       the file handle so that we can unpin the header page immediately
+//       and later find out details without reading the header page
+// In:   name of file to open:
+//       fileName
+//       indexNo
+// Out:  indexHandle - refer to the open file
+// Ret:  PF return code
+//
+RC IX_Manager::OpenIndex(const char *fileName, int indexNo, IX_IndexHandle& indexHandle)
+{
+   RC rc;
+   PF_PageHandle pageHandle;
+   char* pData;
+
+   char indexFileName[20];//at the beginning, the length of the index name is fixed;
+   sprintf(indexFileName,"%s.%d",fileName,indexNo);
+
+   // Call PF_Manager::OpenFile()
+
+   //PF_FileHandle* pfHandle;
+   //RC PF_Manager::OpenFile (const char *fileName, PF_FileHandle &fileHandle)
+   PF_FileHandle fileHandle;
+   if (rc = pPfm->OpenFile(indexFileName, fileHandle))
+   {
+      // Test: non-existing fileName, opened fileHandle
+      goto err_return;
+   }
+
+   // Get the header page
+   if (rc = fileHandle.GetFirstPage(pageHandle))
+   {
+      // Test: invalid file
+      goto err_close;
+   }
+
+   // Get a pointer where header information resides
+   if (rc = pageHandle.GetData(pData))
+      // Should not happen
+      goto err_unpin;
+
+   // Read the file header (from the buffer pool to IX_FileHandle)
+   memcpy(&indexHandle.fileHdr, pData, sizeof(indexHandle.fileHdr));
+
+   if(rc = indexHandle.Open(fileHandle)){
+       goto err_unpin;
+    }
+
+   // Unpin the header page
+   if (rc = indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM))
+      // Should not happen
+      goto err_close;
+
+   // TODO: cannot guarantee the validity of file header at this time
+
+   // Return ok
+   return (0);
+
+   // Recover from inconsistent state due to unexpected error
+err_unpin:
+   indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM);
+err_close:
+   pPfm->CloseFile(*indexHandle.pfFileHandle);
+err_return:
+   // Return error
+   return (rc);
+}
+
+
+//
+// CloseFile
+//
+// Desc: Close file associated with fileHandle
+//       Write back the file header (if there was any changes)
+// In:   fileHandle - handle of file to close
+// Out:  fileHandle - no longer refers to an open file
+// Ret:  RM return code
+//
+RC IX_Manager::CloseIndex(IX_IndexHandle &indexHandle)
+{
+   RC rc;
+
+   // Write back the file header if any changes made to the header
+   // while the file is open
+   if (indexHandle.bHdrChanged) {
+      PF_PageHandle pageHandle;
+      char* pData;
+
+      // Get the header page
+      if (rc = indexHandle.pfFileHandle->GetFirstPage(pageHandle))
+         // Test: unopened(closed) indexHandle, invalid file
+         goto err_return;
+
+      // Get a pointer where header information will be written
+      if (rc = pageHandle.GetData(pData))
+         // Should not happen
+         goto err_unpin;
+
+      // Write the file header (to the buffer pool)
+      memcpy(pData, &indexHandle.fileHdr, sizeof(indexHandle.fileHdr));
+
+      // Mark the header page as dirty
+      if (rc = indexHandle.pfFileHandle->MarkDirty(IX_HEADER_PAGE_NUM))
+         // Should not happen
+         goto err_unpin;
+
+      // Unpin the header page
+      if (rc = indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM))
+         // Should not happen
+         goto err_return;
+
+      // Set file header to be not changed
+      indexHandle.bHdrChanged = FALSE;
+   }
+   // Call PF_Manager::CloseFile()
+
+   indexHandle.Close();
+
+   if (rc = pPfm->CloseFile(*indexHandle.pfFileHandle))
+   {
+       goto err_return;
+   }
+
+   // Reset member variables
+   memset(&indexHandle.fileHdr, 0, sizeof(indexHandle.fileHdr));
+   indexHandle.~IX_IndexHandle();
+
+   // Return ok
+   return (0);
+
+   // Recover from inconsistent state due to unexpected error
+err_unpin:
+   indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM);
+err_return:
+   // Return error
+   return (rc);
+}
+
+
