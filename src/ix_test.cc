@@ -578,9 +578,8 @@ RC Test2(void)
     if(rc = ixm.OpenIndex(FILENAME, index, ih))
         return (rc);
 
-    RID r;
-    ih.Print(-1,r);
     ih.PrintHeader();
+    ih.PrintTree();
 
     if(rc = ixm.CloseIndex(ih))
         return (rc);
@@ -622,17 +621,13 @@ RC Test3(void)
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = InsertIntEntries(ih, MANY_ENTRIES)))
        return (rc);
-  RID r; 
-  ih.PrintHeader();
-  ih.Print(-1,r);
   
    if(rc = ixm.CloseIndex(ih))
         return (rc);
 
    if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
        return (rc);
-//   RID r;
-//   ih.Print(-1,r);
+
    ih.PrintHeader();
 
    if(rc=DeleteIntEntries(ih,nDelete))
@@ -764,9 +759,9 @@ RC Test5(void)
    {
         return (rc);
    }
-//   RID rid;
-//   ih.Print(-1,rid);
-    ih.PrintHeader();
+
+   ih.PrintHeader();
+   ih.PrintTree();
 
    if(rc = ixm.CloseIndex(ih))
    {

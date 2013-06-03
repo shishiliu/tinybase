@@ -557,6 +557,12 @@ IX_BTNode* IX_IndexHandle::GetRoot() const
   return root;
 }
 
+void IX_IndexHandle::PrintTree() const
+{
+    RID rid;
+    this->Print(-1,rid);
+}
+
 void IX_IndexHandle::Print(int level, RID r) const {
   RC invalid = IsValid(); if(invalid) assert(invalid);
   // level -1 signals first call to recursive function - root
