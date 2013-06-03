@@ -129,11 +129,6 @@ RC IX_BTNode::InsertNode(const void* aKey, const RID & aRid)
     return 0;
 }
 
-// return 0 if remove was successful
-// return -2 if key does not exist
-// return -1 if key is the last one (lazy deletion) - underflow
-// kpos is optional - will remove from that position if specified
-// if kpos is specified newkey can be NUL
 RC IX_BTNode::DeleteNode(const void* aKey,int kpos)
 {
    {
@@ -146,7 +141,7 @@ RC IX_BTNode::DeleteNode(const void* aKey,int kpos)
   else {
     pos = FindKeyExact(aKey);
     if (pos < 0)
-      return IX_KEYNOTFOUND;
+      return -2;
     // shift all keys after this pos
   }
   for(int i = pos; i < keysNum-1; i++)
@@ -157,10 +152,7 @@ RC IX_BTNode::DeleteNode(const void* aKey,int kpos)
     rids[i] = rids[i+1];
   }
   SetKeysNumToPage(GetKeysNum()-1);
-  if(keysNum == 0)
-  {
-      return IX_KEYNOTENGOUGH;
-  }
+  if(keysNum == 0) return -1;
   return OK_RC;
 }
 }
@@ -239,9 +231,7 @@ int IX_BTNode::CompareKey(const void* aKey, const void* bKey) const {
     }
     return 0;
 }
-//get the key in the position iPos
-//return OK_RC if success
-//return -1 if fail
+
 RC IX_BTNode::GetKey(int iPos, void*& aKey) const
 {
     if (iPos >= 0 && iPos < keysNum)
@@ -408,9 +398,7 @@ AttrType IX_BTNode::GetType() {
 
 std::ostream& operator<<(std::ostream &os,IX_BTNode &a){
     os << a.GetLeft() << "<-"
-       << "Page RID:" << a.GetNodeRID().Page()<<" "
-       << "Keys Numbre:" << a.GetKeysNum()<<" "
-       << "{";
+       << a.GetNodeRID().Page()  << "{";
   for (int pos = 0; pos <a.GetKeysNum(); pos++) {
     void * k = NULL; a.GetKey(pos, k);
     os << "(";
@@ -461,7 +449,8 @@ void IX_BTNode::Print()
   {
     void * k = NULL;
     GetKey(pos, k);
-    std::cerr<< "(" << GetAddr(pos).Page() << ","<<GetAddr(pos).Slot()<<"), ";
+    std::cerr  << "(";
+    std::cerr<< ":" << GetAddr(pos).Page() << ","<<GetAddr(pos).Slot()<<"), ";
   }
   if(keysNum > 0)
     std::cerr  << "\b\b";

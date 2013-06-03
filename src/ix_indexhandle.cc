@@ -388,7 +388,7 @@ RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid)
 
       IX_BTNode * parent = path[level];
       // update old key - keep same addr
-
+      //parent->Remove(NULL, posAtParent);
       parent->DeleteNode(NULL,posAtParent);
       result = parent->InsertNode((const void*)node->LargestKey(),
                               node->GetNodeRID());
@@ -557,12 +557,6 @@ IX_BTNode* IX_IndexHandle::GetRoot() const
   return root;
 }
 
-void IX_IndexHandle::PrintTree() const
-{
-    RID rid;
-    this->Print(-1,rid);
-}
-
 void IX_IndexHandle::Print(int level, RID r) const {
   RC invalid = IsValid(); if(invalid) assert(invalid);
   // level -1 signals first call to recursive function - root
@@ -584,8 +578,8 @@ void IX_IndexHandle::Print(int level, RID r) const {
     }
   }
 
-  std::cerr<<(*node);
-  //node->Print();
+  //std::cout<<node;
+  node->Print();
 
   if (level >= 2) // non leaf
   {
@@ -618,7 +612,7 @@ void IX_IndexHandle::PrintHeader() const {
 }
 
 //==================================================================
-// Delete a index entry
+// Delete a new index entry
 // 0 indicates success
 // Implements lazy deletion - underflow is defined as 0 keys for all
 // non-root nodes.
@@ -631,12 +625,13 @@ RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
 
   bool nodeLargest = false;
 
-  IX_BTNode* node = FindLeaf(pData);//it's a leaf node
+  IX_BTNode* node = FindLeaf(pData);
   assert(node != NULL);
 
   int pos = node->FindKeyExact((const void*&)pData, rid);
-  //if there is no (key rid) pair exactly the same in the node
+
   if(pos == -1) {
+
     // make sure that there are no dups (keys) left of this node that might
     // have this rid.
     int p = node->FindKeyExact((const void*&)pData, RID(-1,-1));
@@ -645,10 +640,11 @@ RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
       if(other != NULL) {
         int pos = other->FindKeyExact((const void*&)pData, rid);
         other->DeleteNode(pData,pos); // ignore result - not dealing with
-                                      // underflow here
+                                   // underflow here
         return 0;
       }
     }
+
     // key/rid does not exist - error
     return IX_NOSUCHENTRY;
   }
@@ -770,13 +766,10 @@ RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
     return 0;
   }
 }
-
-// search the node who contains the (key, rid)
-// return NULL if (key, rid) is not found
+// return NULL if key, rid is not found
 IX_BTNode* IX_IndexHandle::DupScanLeftFind(IX_BTNode* right, void *pData, const RID& rid)
 {
   IX_BTNode* currNode = FetchNode(right->GetLeft());
-
   int currPos = -1;
 
   for( IX_BTNode* j = currNode;
@@ -792,21 +785,19 @@ IX_BTNode* IX_IndexHandle::DupScanLeftFind(IX_BTNode* right, void *pData, const 
       char* key = NULL;
       int ret = currNode->GetKey(i, (void*&)key);
       if(ret == -1)
-        break;//error in get the key in the position i
+        break;
       if(currNode->CompareKey(pData, key) < 0)
         return NULL;
       if(currNode->CompareKey(pData, key) > 0)
-        return NULL;
+        return NULL; // should never happen
       if(currNode->CompareKey(pData, key) == 0) {
         if(currNode->GetAddr(currPos) == rid)
           return currNode;
       }
-
     }
   }
   return NULL;
 }
-
 RC IX_IndexHandle::DisposePage(const PageNum& pageNum)
 {
   RC invalid = IsValid(); if(invalid) return invalid;

@@ -99,7 +99,7 @@ RC PF_PageHandle::GetData(char *&pData) const
   pData = pPageData;
 
   // Return ok
-  return OK_RC;
+  return (0);
 }
 
 //
@@ -121,5 +121,5 @@ RC PF_PageHandle::GetPageNum(PageNum &_pageNum) const
   _pageNum = this->pageNum;
 
   // Return ok
-  return OK_RC;
+  return (0);
 }

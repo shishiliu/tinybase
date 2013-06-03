@@ -27,7 +27,11 @@ RID::RID(PageNum _pageNum, SlotNum _slotNum)
    pageNum = _pageNum;
    slotNum = _slotNum;
 }
-
+RID::RID(const RID &rid)
+{
+    pageNum = rid.pageNum;
+    slotNum = rid.slotNum;
+}
 //
 // ~RID
 // 

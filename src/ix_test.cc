@@ -33,7 +33,7 @@ using namespace std;
 #define FILENAME     "testrel"        // test file name
 #define BADFILE      "/abc/def/xyz"   // bad file name
 #define STRLEN       39               // length of strings to index
-#define FEW_ENTRIES  341
+#define FEW_ENTRIES  20
 #define MANY_ENTRIES 1000
 #define NENTRIES     5000             // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
@@ -578,18 +578,19 @@ RC Test2(void)
     if(rc = ixm.OpenIndex(FILENAME, index, ih))
         return (rc);
 
+    RID r;
+    ih.Print(-1,r);
     ih.PrintHeader();
-    ih.PrintTree();
 
     if(rc = ixm.CloseIndex(ih))
         return (rc);
-    LsFiles(FILENAME);
+   LsFiles(FILENAME);
 
-    if ((rc = ixm.DestroyIndex(FILENAME, index)))
-        return (rc);
+   if ((rc = ixm.DestroyIndex(FILENAME, index)))
+      return (rc);
 
-    printf("Passed Test 2\n\n");
-    return (0);
+   printf("Passed Test 2\n\n");
+   return (0);
 }
 
 //
@@ -599,7 +600,7 @@ RC Test3(void)
 {
    RC rc;
    int index=0;
-   int nDelete = FEW_ENTRIES * 8/10;
+   int nDelete = MANY_ENTRIES * 8/10;
    IX_IndexHandle ih;
 
    printf("Test3: Delete a few integer entries from an index... \n");
@@ -619,22 +620,22 @@ RC Test3(void)
       return (rc);*/
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-         (rc = InsertIntEntries(ih, FEW_ENTRIES)))
+         (rc = InsertIntEntries(ih, MANY_ENTRIES)))
        return (rc);
-
-   //   ih.PrintHeader();
-   ih.PrintTree();
+//   RID r;
+//   ih.Print(-1,r);
+//   ih.PrintHeader();
    if(rc = ixm.CloseIndex(ih))
         return (rc);
 
    if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
        return (rc);
+//   RID r;
+//   ih.Print(-1,r);
+   ih.PrintHeader();
 
-   if(rc=DeleteIntEntries(ih,nDelete))       
+   if(rc=DeleteIntEntries(ih,nDelete))
        return (rc);
-   ih.PrintTree();
-   //ih.PrintHeader();
-
    if(rc = ixm.CloseIndex(ih))
         return (rc);
 
@@ -762,8 +763,10 @@ RC Test5(void)
    {
         return (rc);
    }
+//   RID rid;
+//   ih.Print(-1,rid);
     ih.PrintHeader();
-    //ih.PrintTree();
+
    if(rc = ixm.CloseIndex(ih))
    {
       return (rc);

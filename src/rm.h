@@ -21,14 +21,6 @@
 #include "redbase.h"
 #include "rm_rid.h"
 #include "pf.h"
-#include "rm.fwd.h"
-
-//
-// RM_PageHdr: Header structure for pages
-//
-struct RM_PageHdr {
-   PageNum nextFree;
-};
 
 //
 // RM_Record: RM Record interface
@@ -154,7 +146,7 @@ public:
     RM_Manager    (PF_Manager &pfm);
     ~RM_Manager   ();
 
-    RC CreateFile (const char *fileName, unsigned recordSize);
+    RC CreateFile (const char *fileName, int recordSize);
     RC DestroyFile(const char *fileName);
     RC OpenFile   (const char *fileName, RM_FileHandle &fileHandle);
 
@@ -173,5 +165,20 @@ private:
 // Print-error function
 //
 void RM_PrintError(RC rc);
+
+#define RM_INVIABLERID     (START_RM_WARN + 0) // inviable rid
+#define RM_UNREADRECORD    (START_RM_WARN + 1) // unread record
+#define RM_INVALIDRECSIZE  (START_RM_WARN + 2) // invalid record size
+#define RM_INVALIDSLOTNUM  (START_RM_WARN + 3) // invalid slot number
+#define RM_RECORDNOTFOUND  (START_RM_WARN + 4) // record not found
+#define RM_INVALIDCOMPOP   (START_RM_WARN + 5) // invalid comparison operator
+#define RM_INVALIDATTR     (START_RM_WARN + 6) // invalid attribute parameters
+#define RM_NULLPOINTER     (START_RM_WARN + 7) // pointer is null
+#define RM_SCANOPEN        (START_RM_WARN + 8) // scan is open
+#define RM_CLOSEDSCAN      (START_RM_WARN + 9) // scan is closed
+#define RM_CLOSEDFILE      (START_RM_WARN + 10)// file handle is closed
+#define RM_LASTWARN        RM_CLOSEDFILE
+
+#define RM_EOF             PF_EOF              // work-around for rm_test
 
 #endif

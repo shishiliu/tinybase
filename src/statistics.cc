@@ -1,4 +1,4 @@
-//
+
 // statistics.cc
 //
 
@@ -202,4 +202,3 @@ void StatisticsMgr::Reset()
 {
    llStats.clear();
 }
-
