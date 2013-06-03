@@ -37,7 +37,7 @@ RM_Manager::~RM_Manager()
 //       recordSize - fixed size of records
 // Ret:  RM_INVALIDRECSIZE or PF return code
 //
-RC RM_Manager::CreateFile(const char *fileName, int recordSize)
+RC RM_Manager::CreateFile(const char *fileName, unsigned recordSize)
 {
    RC rc;
    PF_FileHandle pfFileHandle;
@@ -52,22 +52,23 @@ RC RM_Manager::CreateFile(const char *fileName, int recordSize)
       return (RM_INVALIDRECSIZE);
 
    // Call PF_Manager::CreateFile()
-   if (rc = pPfm->CreateFile(fileName))
+   if ((rc = pPfm->CreateFile(fileName)))
       // Test: existing fileName, wrong permission
       goto err_return;
 
    // Call PF_Manager::OpenFile()
-   if (rc = pPfm->OpenFile(fileName, pfFileHandle))
+   if ((rc = pPfm->OpenFile(fileName, pfFileHandle)))
       // Should not happen
       goto err_destroy;
 
    // Allocate the header page (pageNum must be 0)
-   if (rc = pfFileHandle.AllocatePage(pageHandle))
+   if ((rc = pfFileHandle.AllocatePage(pageHandle))) {
       // Should not happen
       goto err_close;
+   }
 
    // Get a pointer where header information will be written
-   if (rc = pageHandle.GetData(pData))
+   if ((rc = pageHandle.GetData(pData)))
       // Should not happen
       goto err_unpin;
 
@@ -86,17 +87,17 @@ RC RM_Manager::CreateFile(const char *fileName, int recordSize)
    fileHdr->numRecords = 0;
 
    // Mark the header page as dirty
-   if (rc = pfFileHandle.MarkDirty(RM_HEADER_PAGE_NUM))
+   if ((rc = pfFileHandle.MarkDirty(RM_HEADER_PAGE_NUM)))
       // Should not happen
       goto err_unpin;
    
    // Unpin the header page
-   if (rc = pfFileHandle.UnpinPage(RM_HEADER_PAGE_NUM))
+   if ((rc = pfFileHandle.UnpinPage(RM_HEADER_PAGE_NUM)))
       // Should not happen
       goto err_close;
    
    // Call PF_Manager::CloseFile()
-   if (rc = pPfm->CloseFile(pfFileHandle))
+   if ((rc = pPfm->CloseFile(pfFileHandle)))
       // Should not happen
       goto err_destroy;
 
@@ -127,12 +128,12 @@ RC RM_Manager::DestroyFile(const char *fileName)
    RC rc;
 
    // Call PF_Manager::DestroyFile()
-   if (rc = pPfm->DestroyFile(fileName))
+   if ((rc = pPfm->DestroyFile(fileName)))
       // Test: non-existing fileName, wrong permission
       goto err_return;
 
    // Return ok
-   return (0);
+   return OK_RC;
 
 err_return:
    // Return error
@@ -157,17 +158,17 @@ RC RM_Manager::OpenFile(const char *fileName, RM_FileHandle &fileHandle)
    char* pData;
    
    // Call PF_Manager::OpenFile()
-   if (rc = pPfm->OpenFile(fileName, fileHandle.pfFileHandle))
+   if ((rc = pPfm->OpenFile(fileName, fileHandle.pfFileHandle)))
       // Test: non-existing fileName, opened fileHandle
       goto err_return;
 
    // Get the header page
-   if (rc = fileHandle.pfFileHandle.GetFirstPage(pageHandle))
+   if ((rc = fileHandle.pfFileHandle.GetFirstPage(pageHandle)))
       // Test: invalid file
       goto err_close;
 
    // Get a pointer where header information resides
-   if (rc = pageHandle.GetData(pData))
+   if ((rc = pageHandle.GetData(pData)))
       // Should not happen
       goto err_unpin;
 
@@ -175,7 +176,7 @@ RC RM_Manager::OpenFile(const char *fileName, RM_FileHandle &fileHandle)
    memcpy(&fileHandle.fileHdr, pData, sizeof(fileHandle.fileHdr));
 
    // Unpin the header page
-   if (rc = fileHandle.pfFileHandle.UnpinPage(RM_HEADER_PAGE_NUM))
+   if ((rc = fileHandle.pfFileHandle.UnpinPage(RM_HEADER_PAGE_NUM)))
       // Should not happen
       goto err_close;
 
@@ -217,12 +218,12 @@ RC RM_Manager::CloseFile(RM_FileHandle &fileHandle)
       char* pData;
 
       // Get the header page
-      if (rc = fileHandle.pfFileHandle.GetFirstPage(pageHandle))
+      if ((rc = fileHandle.pfFileHandle.GetFirstPage(pageHandle)))
          // Test: unopened(closed) fileHandle, invalid file
          goto err_return;
 
       // Get a pointer where header information will be written
-      if (rc = pageHandle.GetData(pData))
+      if ((rc = pageHandle.GetData(pData)))
          // Should not happen
          goto err_unpin;
 
@@ -230,12 +231,12 @@ RC RM_Manager::CloseFile(RM_FileHandle &fileHandle)
       memcpy(pData, &fileHandle.fileHdr, sizeof(fileHandle.fileHdr));
 
       // Mark the header page as dirty
-      if (rc = fileHandle.pfFileHandle.MarkDirty(RM_HEADER_PAGE_NUM))
+      if ((rc = fileHandle.pfFileHandle.MarkDirty(RM_HEADER_PAGE_NUM)))
          // Should not happen
          goto err_unpin;
 
       // Unpin the header page
-      if (rc = fileHandle.pfFileHandle.UnpinPage(RM_HEADER_PAGE_NUM))
+      if ((rc = fileHandle.pfFileHandle.UnpinPage(RM_HEADER_PAGE_NUM)))
          // Should not happen
          goto err_return;
 
@@ -244,7 +245,7 @@ RC RM_Manager::CloseFile(RM_FileHandle &fileHandle)
    }
 
    // Call PF_Manager::CloseFile()
-   if (rc = pPfm->CloseFile(fileHandle.pfFileHandle))
+   if ((rc = pPfm->CloseFile(fileHandle.pfFileHandle)))
       // Test: unopened(closed) fileHandle
       goto err_return;
 
@@ -253,7 +254,7 @@ RC RM_Manager::CloseFile(RM_FileHandle &fileHandle)
    fileHandle.fileHdr.firstFree = RM_PAGE_LIST_END;
 
    // Return ok
-   return (0);
+   return OK_RC;
 
    // Recover from inconsistent state due to unexpected error
 err_unpin:
