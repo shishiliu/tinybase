@@ -50,7 +50,7 @@ RC IX_IndexHandle::Open(PF_FileHandle &fileHandle)
         PageNum pageNum;
         //RC rc = GetNewPage(pageNum);
 
-        if (rc = GetNewPage(pageNum))
+        if ((rc = GetNewPage(pageNum)))
             return rc;
         fileHdr.firstFreePage = pageNum;
         SetHeight(1);
@@ -63,7 +63,7 @@ RC IX_IndexHandle::Open(PF_FileHandle &fileHandle)
     }
     PF_PageHandle rootPageHandle;
     // pin root page - should always be valid
-    if (rc = pfFileHandle->GetThisPage(fileHdr.firstFreePage, rootPageHandle))
+    if ((rc = pfFileHandle->GetThisPage(fileHdr.firstFreePage, rootPageHandle)))
         return rc;
 
     root = new IX_BTNode(fileHdr.attrType, fileHdr.attrLength,rootPageHandle, newPage);

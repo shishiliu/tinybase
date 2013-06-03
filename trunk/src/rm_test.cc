@@ -364,8 +364,6 @@ RC PrintFile(RM_FileHandle &fh)
    RID       rid;
    RM_Record rec;
    int       val = 30;
-   PageNum   pn;
-   SlotNum   sn;
 
    printf("\nprinting file contents\n");
 
@@ -765,10 +763,6 @@ RC Test5(void)
    RM_FileHandle fh2;
    RM_Record     rec;
    RM_FileScan   fs;
-   int           val = 30;
-   TestRec       *pRecBuf;
-   PageNum       pn;
-   SlotNum       sn;
 
    printf("test5 starting ****************\n");
 
@@ -853,7 +847,6 @@ RC Test6(void)
    RM_Record     rec;
    RM_FileScan   fs;
    int           val;
-   TestRec       *pRecBuf;
 
    printf("test6 starting ****************\n");
 
@@ -914,10 +907,6 @@ RC Test7(void)
    RM_FileHandle fh;
    RM_Record     rec;
    RM_FileScan   fs;
-   int           val = 30;
-   TestRec       *pRecBuf;
-   PageNum       pn;
-   SlotNum       sn;
 
    printf("test7 starting ****************\n");
 
