@@ -622,9 +622,10 @@ RC Test3(void)
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = InsertIntEntries(ih, MANY_ENTRIES)))
        return (rc);
-//   RID r;
-//   ih.Print(-1,r);
-//   ih.PrintHeader();
+  RID r; 
+  ih.PrintHeader();
+  ih.Print(-1,r);
+  
    if(rc = ixm.CloseIndex(ih))
         return (rc);
 
