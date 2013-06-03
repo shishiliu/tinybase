@@ -14,7 +14,10 @@
 #include <iostream>
 #include <assert.h>
 #include <math.h>       /* floor */
+#include <assert.h>
+
 #include "ix.h"
+
 
 #define IX_PAGE_LIST_END  -1       // end of list of free pages
 #define IX_PAGE_FULL      -2       // all slots in the page are full
