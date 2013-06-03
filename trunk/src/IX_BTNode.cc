@@ -1,6 +1,9 @@
 #include "pf.h"
+#include "ix.fwd.h"
+//#include "ix_internal.h"
 #include <cmath>
 #include <iostream>
+#include <assert.h>
 #include "IX_BTNode.h"
 
 IX_BTNode::IX_BTNode(AttrType iAttrType, int iAttrLength, PF_PageHandle& xPageHandle, bool bNewPage)

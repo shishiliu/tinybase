@@ -34,7 +34,6 @@ class IX_Manager;
 //
 void IX_PrintError(RC rc);
 
-
 #define IX_INVALIDATTR     (START_IX_WARN + 1) // invalid attribute parameters
 #define IX_NULLPOINTER     (START_IX_WARN + 2) // pointer is null
 #define IX_ENTRYEXISTS     (START_IX_WARN + 3) //

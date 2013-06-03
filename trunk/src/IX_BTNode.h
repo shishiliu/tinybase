@@ -13,8 +13,8 @@
 #include <iosfwd>
 
 class IX_BTNode {
-    friend class IX_FileHandle;
-    friend class IX_FileScan;
+    friend class IX_IndexHandle;
+    friend class IX_IndexScan;
 public:
     IX_BTNode(AttrType attributeType, int iAttrLength, PF_PageHandle& aPh, bool isNewPage);
     ~IX_BTNode();

@@ -11,16 +11,16 @@
 
 #include "redbase.h"  // Please don't change these lines
 #include "rm_rid.h"  // Please don't change these lines
-#include "ix.fwd.h"
-#include "IX_BTNode.h"
+#include "pf.h"
 
+
+#include "IX_BTNode.h"
 ////////////////////////////////////////////////////////////////////
 //
 // IX_BTNode: IX B+ Tree interface
 //
 // The leaf node and internal node used the same structure beacause the  internal node do not use 
 // the slot id part of the RID 
-
  
 struct IX_FileHdr {
     PageNum firstFreePage; //addr of root page; first free page in th lined list
