@@ -70,7 +70,7 @@ public:
     void SetHeight(const int& h);
     IX_BTNode* GetRoot() const;
 //===============================================================
-    void Print(int level, RID r) const;
+    void PrintTree() const;
     void PrintHeader() const;
 //===============================================================
     IX_BTNode* DupScanLeftFind(IX_BTNode* right, void *pData, const RID& rid);
@@ -84,7 +84,7 @@ private:
     IX_IndexHandle  (const IX_IndexHandle &fileHandle);
     // Overloaded =
     IX_IndexHandle& operator=(const IX_IndexHandle &fileHandle);
-
+    void Print(int level, RID r) const;
     PF_FileHandle* pfFileHandle;
     IX_FileHdr fileHdr;                                   // file header
     int bHdrChanged;                                      // dirty flag for file hdr
