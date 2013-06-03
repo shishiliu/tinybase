@@ -1,7 +1,7 @@
 #include "pf.h"
 #include <cmath>
 #include <iostream>
-#include "ix_internal.h"
+#include "IX_BTNode.h"
 
 IX_BTNode::IX_BTNode(AttrType iAttrType, int iAttrLength, PF_PageHandle& xPageHandle, bool bNewPage)
 : attributeType(iAttrType)

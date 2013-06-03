@@ -11,7 +11,7 @@
 
 #include "redbase.h"  // Please don't change these lines
 #include "rm_rid.h"  // Please don't change these lines
-#include "pf.h"
+#include "ix.fwd.h"
 #include "IX_BTNode.h"
 
 ////////////////////////////////////////////////////////////////////
