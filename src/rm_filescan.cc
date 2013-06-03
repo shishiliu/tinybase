@@ -162,12 +162,12 @@ RC RM_FileScan::GetNextRec(RM_Record &rec)
    if (curSlotNum == pFileHandle->fileHdr.numRecordsPerPage) {
 repeat:
       // Get next page
-      if (rc = pFileHandle->pfFileHandle.GetNextPage(curPageNum, pageHandle))
+      if ((rc = pFileHandle->pfFileHandle.GetNextPage(curPageNum, pageHandle)))
          // Test: EOF
          goto err_return;
 
       // Update curPageNum
-      if (rc = pageHandle.GetPageNum(curPageNum))
+      if ((rc = pageHandle.GetPageNum(curPageNum)))
          // Should not happen
          // In fact, we need to unpin the page, but don't know the page number
          goto err_return;
@@ -177,17 +177,18 @@ repeat:
    }
    // We didn't process the whole page in the previous GetNextRec() call
    else {
-      if (rc = pFileHandle->pfFileHandle.GetThisPage(curPageNum, pageHandle))
+      if ((rc = pFileHandle->pfFileHandle.GetThisPage(curPageNum, pageHandle))) {
          if (rc == PF_INVALIDPAGE)
             // We can get PF_INVALIDPAGE if curPageNum was disposed
             goto repeat;
          else
             // Test: closed fileHandle
             goto err_return;
+      }
    }
 
    //
-   if (rc = pageHandle.GetData(pData))
+   if ((rc = pageHandle.GetData(pData)))
       // Should not happen
       goto err_unpin;
 
@@ -197,7 +198,7 @@ repeat:
    // No HIT in this page, go to next page
    if (curSlotNum == pFileHandle->fileHdr.numRecordsPerPage) {
       // Unpin this page
-      if (rc = pFileHandle->pfFileHandle.UnpinPage(curPageNum))
+      if ((rc = pFileHandle->pfFileHandle.UnpinPage(curPageNum)))
          // Should not happen
          goto err_return;
       
@@ -226,7 +227,7 @@ repeat:
    FindNextRecInCurPage(pData);
 
    // Unpin this page
-   if (rc = pFileHandle->pfFileHandle.UnpinPage(curPageNum))
+   if ((rc = pFileHandle->pfFileHandle.UnpinPage(curPageNum)))
       // Should not happen
       goto err_return;
 
