@@ -463,7 +463,10 @@ RC PF_BufferMgr::FlushPages(int fd)
 #endif
 
    // Return warning or ok
-   return (rcWarn);
+   if (0 != rcWarn) {
+      return rcWarn;
+   }
+   return rc;
 }
 
 //
