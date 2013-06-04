@@ -550,36 +550,44 @@ RC Test2(void) {
    printf("Test2: Insert a few integer entries into an index... \n");
 
    //standard test
-   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof (int))) ||
-           (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-           (rc = InsertIntEntries(ih, FEW_ENTRIES)) ||
-           (rc = ixm.CloseIndex(ih)) ||
-           (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
+   bool aborted = false;
+   aborted = (OK_RC != (rc = ixm.CreateIndex(FILENAME, index, INT, sizeof (int))));
+   bool indexCreated = !aborted;
+   aborted = aborted || (OK_RC != (rc = ixm.OpenIndex(FILENAME, index, ih)));
+   aborted = aborted || (OK_RC != (rc = InsertIntEntries(ih, FEW_ENTRIES)));
+   aborted = aborted || (OK_RC != (rc = ixm.CloseIndex(ih)));
+   aborted = aborted || (OK_RC != (rc = ixm.OpenIndex(FILENAME, index, ih)));
+   // ensure inserted entries are all there
+   if (!aborted) {
+      aborted = OK_RC != (rc = VerifyIntIndex(ih, 0, FEW_ENTRIES, TRUE));
+      if (aborted) {
+         printf("VerifyIntIndex error!\n\n");
+      }
+   }
+   // ensure an entry not inserted is not there
+   //(rc = VerifyIntIndex(ih, FEW_ENTRIES, 1, FALSE)) ||
+   aborted = aborted || (OK_RC != (rc = ixm.CloseIndex(ih)));
 
-           // ensure inserted entries are all there
-           //(rc = VerifyIntIndex(ih, 0, FEW_ENTRIES, TRUE)) ||
-
-           // ensure an entry not inserted is not there
-           //(rc = VerifyIntIndex(ih, FEW_ENTRIES, 1, FALSE)) ||
-           (rc = ixm.CloseIndex(ih)))
-      return (rc);
-
-
-   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
-      return (rc);
-
-   ih.PrintHeader();
-   ih.PrintTree();
-
-   if ((rc = ixm.CloseIndex(ih)))
-      return (rc);
-   LsFiles(FILENAME);
-
-   if ((rc = ixm.DestroyIndex(FILENAME, index)))
-      return (rc);
-
-   printf("Passed Test 2\n\n");
-   return (0);
+   if (!aborted) {
+      aborted = OK_RC != (rc = ixm.OpenIndex(FILENAME, index, ih));
+      if (!aborted) {
+         ih.PrintHeader();
+         ih.PrintTree();
+         aborted = OK_RC != (rc = ixm.CloseIndex(ih));
+         if (!aborted) {
+            LsFiles(FILENAME);
+         }
+      }
+   }
+   
+   if (indexCreated) {
+      aborted = OK_RC != (rc = ixm.DestroyIndex(FILENAME, index)) || aborted;
+   }
+   
+   if (!aborted) {
+      printf("Passed Test 2\n\n");
+   }
+   return aborted ? rc : OK_RC;
 }
 
 //
