@@ -146,6 +146,7 @@ RC IX_IndexHandle::WriteHdr()
 {
     //refresh the first leaf page
     fileHdr.firstLeafPage = this->FindSmallestLeaf()->GetNodeRID().Page();
+    return 0;
 }
 
 //=================================================================================
@@ -432,8 +433,6 @@ RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid, int detail)
         currRight->SetLeft(newNode->GetNodeRID().Page());
         delete currRight;
       }
-
-      IX_BTNode * nodeInsertedInto = NULL;
 
       // put the new entry into one of the 2 now.
       // In the comparison,
