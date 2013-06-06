@@ -110,11 +110,9 @@ RC IX_BTNode::InsertNode(const void* aKey, const RID & aRid)
     if (keysNum >= order) return -1; //need to add the state code
     int i = -1;
 
-    void *prevKey = NULL;
     void *currKey = NULL;
     for(i = keysNum-1; i >= 0; i--)
     {
-        prevKey = currKey;
         GetKey(i, currKey);
         if (CompareKey(aKey, currKey) >= 0)
         {
