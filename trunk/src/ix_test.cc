@@ -630,6 +630,7 @@ RC Test3(void) {
    // delete
    if ((rc = DeleteIntEntries(ih, nDelete)))
       return (rc);
+   ih.PrintHeader();
    if ((rc = ixm.CloseIndex(ih)))
       return (rc);
 
