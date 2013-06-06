@@ -442,11 +442,9 @@ RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid, int detail)
       // are the same.
       if(node->CompareKey(pData, node->LargestKey()) >= 0) {
         newNode->InsertNode(failedKey, failedRid);
-        nodeInsertedInto = newNode;
       }
       else { // <
         node->InsertNode(failedKey, failedRid);
-        nodeInsertedInto = node;
       }
 
       // go up to parent level and repeat
