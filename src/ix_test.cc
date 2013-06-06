@@ -615,19 +615,19 @@ RC Test3(void) {
          (rc = VerifyIntIndex(ih, nDelete, FEW_ENTRIES - nDelete, TRUE)) ||
          (rc = ixm.CloseIndex(ih)))
       return (rc);*/
-   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof (int))) ||
-           (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-           (rc = InsertIntEntries(ih, MANY_ENTRIES)))
-      return (rc);
+   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
+         (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
+         (rc = InsertIntEntries(ih, MANY_ENTRIES)))
+       return (rc);
+  
+   ih.PrintHeader();
 
-   if ((rc = ixm.CloseIndex(ih)))
-      return (rc);
+   if((rc = ixm.CloseIndex(ih)))
+        return (rc);
 
    if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
       return (rc);
-
-   ih.PrintHeader();
-
+   // delete
    if ((rc = DeleteIntEntries(ih, nDelete)))
       return (rc);
    if ((rc = ixm.CloseIndex(ih)))
@@ -766,6 +766,12 @@ RC Test5(void) {
 
    LsFiles(FILENAME);
 
+   if ((rc = ixm.OpenIndex(FILENAME, index, ih))) {
+      return (rc);
+   }
+   
+   ih.PrintHeader();
+   ih.PrintTree();
    if ((rc = ixm.DestroyIndex(FILENAME, index)))
       return (rc);
 

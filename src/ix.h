@@ -24,6 +24,7 @@
  
 struct IX_FileHdr {
     PageNum firstFreePage; //addr of root page; first free page in th lined list
+    PageNum firstLeafPage; //addr of root page; first free page in th lined list
     int numPages;      // # of pages in the file
     int pageSize;      // size per index node - usually PF_PAGE_SIZE
     int pairSize;      // size of each (key, RID) pair in index
@@ -40,16 +41,18 @@ struct IX_FileHdr {
 //
 class IX_IndexHandle {
     friend class IX_Manager;
-    friend class IX_FileScan;
+    friend class IX_IndexScan;
 public:
     IX_IndexHandle();
     ~IX_IndexHandle();
 
     // Insert a new index entry
     RC InsertEntry(void *pData, const RID &rid);
+    RC InsertEntry(void *pData, const RID &rid,int detail);
 
     // Delete a new index entry
     RC DeleteEntry(void *pData, const RID &rid);
+    RC DeleteEntry(void *pData, const RID &rid,int detail);
 
     // Force index files to disk
     RC ForcePages();
@@ -61,6 +64,7 @@ public:
 //===============================================================
     RC IsValid () const;
     IX_BTNode* FindLargestLeaf();
+    IX_BTNode* FindSmallestLeaf();
     IX_BTNode* FetchNode(PageNum p) const;
     IX_BTNode* FetchNode(RID r) const;
     RC GetThisPage(PageNum p, PF_PageHandle& ph) const;
@@ -70,21 +74,25 @@ public:
     void SetHeight(const int& h);
     IX_BTNode* GetRoot() const;
 //===============================================================
-    void PrintTree() const;
     void PrintHeader() const;
+    void PrintTree() const;
+    void Print(int level, RID r) const;
 //===============================================================
     IX_BTNode* DupScanLeftFind(IX_BTNode* right, void *pData, const RID& rid);
     RC DisposePage(const PageNum& pageNum);
 //===============================================================
     // Insert a new index entry
     RC FindEntry(void *pData, const RID &rid);
+    RC WriteHdr();
 
 private:
     // Copy constructor
     IX_IndexHandle  (const IX_IndexHandle &fileHandle);
     // Overloaded =
     IX_IndexHandle& operator=(const IX_IndexHandle &fileHandle);
-    void Print(int level, RID r) const;
+
+
+
     PF_FileHandle* pfFileHandle;
     IX_FileHdr fileHdr;                                   // file header
     int bHdrChanged;                                      // dirty flag for file hdr
@@ -168,7 +176,11 @@ void IX_PrintError(RC rc);
 #define IX_NOSUCHENTRY     (START_IX_ERR - 9)  //
 #define IX_KEYNOTFOUND     (START_IX_ERR - 10) // key is not found
 #define IX_INVALIDSIZE     (START_IX_ERR - 11) // btnode's size(order) is invalid
-#define IX_LASTERROR       IX_INVALIDSIZE  // end of file
+#define IX_KEYNOTENGOUGH   (START_IX_ERR - 12) // btnode has not enough keys
+#define IX_SCANOPEN        (START_IX_ERR - 13) // btnode has not enough keys
+#define IX_INVALIDCOMPOP   (START_IX_ERR - 14) // btnode has not enough keys
+#define IX_CLOSEDSCAN      (START_IX_ERR - 15) // btnode has not enough keys
+#define IX_LASTERROR       IX_CLOSEDSCAN  // end of file
 
 #define IX_EOF             PF_EOF              // work-around for rm_test
 #endif

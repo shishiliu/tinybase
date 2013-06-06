@@ -114,6 +114,7 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType,
    // Write the file header (to the buffer pool)
    fileHdr = (IX_FileHdr *)pData;
    fileHdr-> firstFreePage = IX_PAGE_LIST_END;
+   fileHdr-> firstLeafPage = IX_PAGE_LIST_END;
    fileHdr->numPages = 1; // header page
    fileHdr->pageSize = PF_PAGE_SIZE;
    fileHdr->pairSize = attrLength + sizeof(RID);

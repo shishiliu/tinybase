@@ -52,8 +52,11 @@ void IX_PrintError(RC rc);
 #define IX_NOSUCHENTRY     (START_IX_ERR - 9)  //
 #define IX_KEYNOTFOUND     (START_IX_ERR - 10) // key is not found
 #define IX_INVALIDSIZE     (START_IX_ERR - 11) // btnode's size(order) is invalid
-#define IX_LASTERROR       IX_INVALIDSIZE  // end of file
+#define IX_KEYNOTENGOUGH   (START_IX_ERR - 12) // btnode has not enough keys
+#define IX_SCANOPEN        (START_IX_ERR - 13) // btnode has not enough keys
+#define IX_INVALIDCOMPOP   (START_IX_ERR - 14) // btnode has not enough keys
+#define IX_CLOSEDSCAN      (START_IX_ERR - 15) // btnode has not enough keys
+#define IX_LASTERROR       IX_CLOSEDSCAN  // end of file
 
 #define IX_EOF             PF_EOF              // work-around for rm_test
-
 #endif

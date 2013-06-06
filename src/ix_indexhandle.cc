@@ -1,3 +1,16 @@
+/*
+todo: (1) for the test of 200000
+        enumerate all pages pinned and unpinned
+        to findout which step missing the operation of unpin
+      (4) in order to implement the ix_scan, we can add a function ro refresh the root
+        for the root, it's left/right neighbour could be the page of the first the leaf node
+
+      (2) check the delete of 200000, to verify the merge and the redistribution
+      (3) for the ix_scan
+        implementation
+    (5) rewrite the insert/delete
+*/
+
 //
 // File:        ix_indexhandle.cc
 // Description: IX_IndexHandle class implementation
@@ -12,6 +25,7 @@ IX_IndexHandle::IX_IndexHandle()
    bHdrChanged = FALSE;
    memset(&fileHdr, 0, sizeof(fileHdr));
    fileHdr.firstFreePage = IX_PAGE_LIST_END;
+   fileHdr.firstLeafPage = IX_PAGE_LIST_END;
 
    fileHdr.height = 0;
    pfFileHandle = NULL;
@@ -53,13 +67,14 @@ RC IX_IndexHandle::Open(PF_FileHandle &fileHandle)
         if ((rc = GetNewPage(pageNum)))
             return rc;
         fileHdr.firstFreePage = pageNum;
+        fileHdr.firstLeafPage = pageNum;
         SetHeight(1);
     }
     //if root already exists
     else
     {
         newPage = false;
-        SetHeight(fileHdr.height); // do all other init
+        SetHeight(fileHdr.height); // do all other init        
     }
     PF_PageHandle rootPageHandle;
     // pin root page - should always be valid
@@ -102,9 +117,9 @@ RC IX_IndexHandle::Close()
       for (int i = 1; i < fileHdr.height; i++) 
         if(path[i] != NULL) 
         {
-          if(pfFileHandle != NULL)
-            pfFileHandle->UnpinPage(path[i]->GetNodeRID().Page());
-            // delete path[i]; - better leak than crash
+            if(pfFileHandle != NULL)
+                pfFileHandle->UnpinPage(path[i]->GetNodeRID().Page());
+            delete path[i]; //- better leak than crash
         }
       delete [] path;
       path = NULL;
@@ -125,6 +140,12 @@ RC IX_IndexHandle::Close()
       pfFileHandle->UnpinPage(fileHdr.firstFreePage);
     }
     return 0;
+}
+
+RC IX_IndexHandle::WriteHdr()
+{
+    //refresh the first leaf page
+    fileHdr.firstLeafPage = this->FindSmallestLeaf()->GetNodeRID().Page();
 }
 
 //=================================================================================
@@ -215,9 +236,49 @@ IX_BTNode* IX_IndexHandle::FindLargestLeaf()
   }
   return path[fileHdr.height-1];
 }
+// return NULL if there is no root
+// otherwise return a pointer to the leaf node that is leftmost OR
+// smallest in value
+// also populates the path member variable with the path
+IX_BTNode* IX_IndexHandle::FindSmallestLeaf()
+{
+  RC invalid = IsValid(); if(invalid) return NULL;
+  if (root == NULL) return NULL;
 
+  if(fileHdr.height == 1) {
+    path[0] = root;
+    return root;
+  }
+
+  for (int i = 1; i < fileHdr.height; i++)
+  {
+   //get the mostleft (key,rid), which is the smallest key in the node
+    RID r = path[i-1]->GetAddr(0);
+    if(r.Page() == -1) {
+      assert("should not run into empty node");
+      return NULL;
+    }
+    // start with a fresh path
+    if(path[i] != NULL) {
+      RC rc = pfFileHandle->UnpinPage(path[i]->GetNodeRID().Page());
+      if(rc < 0) {
+          assert("error");
+      }
+      if (rc < 0) return NULL;
+      delete path[i];
+      path[i] = NULL;
+    }
+    path[i] = FetchNode(r);
+    PF_PageHandle dummy;
+    // pin path pages
+    RC rc = pfFileHandle->GetThisPage(path[i]->GetNodeRID().Page(), dummy);
+    if (rc != 0) return NULL;
+    pathP[i-1] = 0; // dummy
+    }
+  return path[fileHdr.height-1];
+}
 //
-// Desc: Get the BTNode at the PageNumber specified within Btree
+// Desc: Creat a BTNode at the PageNumber specified
 //
 // Ret:  NULL if the PageNumber < 0
 //       otherwise return a pointer to the a BTNode
@@ -225,9 +286,8 @@ IX_BTNode* IX_IndexHandle::FetchNode(PageNum p) const
 {
   return FetchNode(RID(p,(SlotNum)-1));
 }
-
 //
-// Desc: Get the BTNode at the RID specified within Btree
+// Desc: Creat the BTNode at the RID specified
 //
 // Ret:  NULL if the PageNumber < 0
 //       otherwise return a pointer to the a BTNode
@@ -242,8 +302,10 @@ IX_BTNode* IX_IndexHandle::FetchNode(RID r) const
   }
   if(rc!=0) return NULL;
 
-  return new IX_BTNode(fileHdr.attrType, fileHdr.attrLength,
-                       ph, false);
+  return new IX_BTNode(fileHdr.attrType,
+                       fileHdr.attrLength,
+                       ph,
+                       false);
 }
 
 //
@@ -269,7 +331,18 @@ RC IX_IndexHandle::GetThisPage(PageNum p, PF_PageHandle& ph) const {
 // Out:  rid -
 // Ret:  RM return code
 //
-RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid)
+RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid){
+    RC rc;
+    int detail = 0;
+    rc =InsertEntry(pData, rid, detail);
+    if(rc == 0)
+    {
+        WriteHdr();
+    }
+    return rc;
+}
+
+RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid, int detail)
 {
     RC invalid = IsValid(); if(invalid) return invalid;
 
@@ -388,7 +461,7 @@ RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid)
 
       IX_BTNode * parent = path[level];
       // update old key - keep same addr
-      //parent->Remove(NULL, posAtParent);
+
       parent->DeleteNode(NULL,posAtParent);
       result = parent->InsertNode((const void*)node->LargestKey(),
                               node->GetNodeRID());
@@ -414,7 +487,7 @@ RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid)
     } 
     else 
     {
-      //std::cerr << "root split happened" << std::endl;
+      std::cerr << "root split happened" << std::endl;
 
       // unpin old root page
       RC rc = pfFileHandle->UnpinPage(fileHdr.firstFreePage);
@@ -439,6 +512,7 @@ RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid)
 
       // pin root page - should always be valid
       fileHdr.firstFreePage = root->GetNodeRID().Page();
+
       PF_PageHandle rootph;
       rc = pfFileHandle->GetThisPage(fileHdr.firstFreePage, rootph);
       if (rc != 0) return rc;
@@ -447,7 +521,7 @@ RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid)
         delete newNode;
         newNode = NULL;
       }
-
+      //refresh all information in the header
       SetHeight(fileHdr.height+1);
       return 0;
     }
@@ -513,8 +587,8 @@ IX_BTNode* IX_IndexHandle::FindLeaf(const void *pData)
     path[i] = FetchNode(r.Page());
 
     PF_PageHandle dummy;
-    // pin path pages
 
+    // pin path pages
     RC rc = pfFileHandle->GetThisPage(path[i]->GetNodeRID().Page(), dummy);
     if (rc != 0) return NULL;
 
@@ -529,6 +603,7 @@ int IX_IndexHandle::GetHeight() const
 {
   return fileHdr.height;
 }
+
 void IX_IndexHandle::SetHeight(const int& h)
 {
   for(int i = 1;i < fileHdr.height; i++)
@@ -584,8 +659,8 @@ void IX_IndexHandle::Print(int level, RID r) const {
     }
   }
 
-  //std::cout<<node;
-  node->Print();
+  std::cerr<<(*node);
+  //node->Print();
 
   if (level >= 2) // non leaf
   {
@@ -612,17 +687,30 @@ void IX_IndexHandle::PrintHeader() const {
 	std::cerr<<"State:Index is closed."<<std::endl; 
     }
     std::cerr<<"Index Root Page number:"<<fileHdr.firstFreePage<<std::endl;
+    std::cerr<<"Index Smallest Page number:"<<fileHdr.firstLeafPage<<std::endl;
     std::cerr<<"Index #Pages:"<<fileHdr.numPages<<std::endl;
     std::cerr<<"Index BTNode order:"<<fileHdr.order<<std::endl;
     std::cerr<<"Index B+ Tree Height:"<<fileHdr.height<<std::endl;
 }
 
 //==================================================================
-// Delete a new index entry
+// Delete a index entry
 // 0 indicates success
 // Implements lazy deletion - underflow is defined as 0 keys for all
 // non-root nodes.
 RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
+{
+    RC rc;
+    int detail = 0;
+    rc = DeleteEntry(pData, rid,detail);
+    if(rc ==0 )
+    {
+        WriteHdr();
+    }
+    return rc;
+}
+
+RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid,int detail)
 {
   if(pData == NULL)
     // bad input to method
@@ -631,13 +719,12 @@ RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
 
   bool nodeLargest = false;
 
-  IX_BTNode* node = FindLeaf(pData);
+  IX_BTNode* node = FindLeaf(pData);//it's a leaf node
   assert(node != NULL);
 
   int pos = node->FindKeyExact((const void*&)pData, rid);
-
+  //if there is no (key rid) pair exactly the same in the node
   if(pos == -1) {
-
     // make sure that there are no dups (keys) left of this node that might
     // have this rid.
     int p = node->FindKeyExact((const void*&)pData, RID(-1,-1));
@@ -646,11 +733,10 @@ RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
       if(other != NULL) {
         int pos = other->FindKeyExact((const void*&)pData, rid);
         other->DeleteNode(pData,pos); // ignore result - not dealing with
-                                   // underflow here
+                                      // underflow here
         return 0;
       }
     }
-
     // key/rid does not exist - error
     return IX_NOSUCHENTRY;
   }
@@ -661,35 +747,34 @@ RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
   // Handle special case of key being largest and rightmost in
   // node. Means it is in parent and potentially whole path (every
   // intermediate node)
-  if (nodeLargest) {
-    // cerr << "node largest" << endl;
-    // void * leftKey = NULL;
-    // node->GetKey(node->GetNumKeys()-2, leftKey);
-    // cerr << " left key " << *(int*)leftKey << endl;
-    // if(node->CmpKey(pData, leftKey) != 0) {
+  if (nodeLargest)
+  {
+    //std::cerr << "node largest" << std::endl;
     // replace this key with leftkey in every intermediate node
     // where it appears
-    for(int i = fileHdr.height-2; i >= 0; i--) {
-      int pos = path[i]->FindKeyExact((const void *&)pData);
-      if(pos != -1) {
-
+    for(int i = fileHdr.height-2; i >= 0; i--)
+    {
+      int posInPath = path[i]->FindKeyExact((const void *&)pData);
+      if(posInPath != -1)
+      {
         void * leftKey = NULL;
         leftKey = path[i+1]->LargestKey();
-        if(node->CompareKey(pData, leftKey) == 0) {
-          int pos = path[i+1]->GetKeysNum()-2;
-          if(pos < 0) {
+        if(node->CompareKey(pData, leftKey) == 0)
+        {
+          int posInLeaf = path[i+1]->GetKeysNum()-2;
+          if(posInLeaf < 0)
+          {
             continue; //underflow will happen
           }
           path[i+1]->GetKey(path[i+1]->GetKeysNum()-2, leftKey);
         }
-
         // if level is lower than leaf-1 then make sure that this is
         // the largest key
         if((i == fileHdr.height-2) || // leaf's parent level
-           (pos == path[i]->GetKeysNum()-1) // largest at
+           (posInPath == path[i]->GetKeysNum()-1) // largest at
            // intermediate node too
           )
-          path[i]->SetKey(pos, leftKey);
+          path[i]->SetKey(posInPath, leftKey);
       }
     }
   }
@@ -697,8 +782,8 @@ RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
   int result = node->DeleteNode(pData,pos); // pos is the param that counts
 
   int level = fileHdr.height - 1; // leaf level
-  while (result == -1) {
 
+  while (result == IX_KEYNOTENGOUGH) {
     // go up to parent level and repeat
     level--;
     if(level < 0) break; // root !
@@ -709,7 +794,9 @@ RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
     // cerr << "level was " << level << endl ;
 
     IX_BTNode * parent = path[level];
+
     result = parent->DeleteNode(NULL,posAtParent);
+
     // root is considered underflow even it is left with a single key
     if(level == 0 && parent->GetKeysNum() == 1 && result == 0)
       result = -1;
@@ -717,7 +804,8 @@ RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
     // adjust L/R pointers because a node is going to be destroyed
     IX_BTNode* left = FetchNode(node->GetLeft());
     IX_BTNode* right = FetchNode(node->GetRight());
-    if(left != NULL) {
+    if(left != NULL)
+    {
       if(right != NULL)
         left->SetRight(right->GetNodeRID().Page());
       else
@@ -735,6 +823,8 @@ RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
       delete left;
 
     node->Destroy();
+    fileHdr.numPages--;
+
     RC rc = DisposePage(node->GetNodeRID().Page());
     if (rc < 0)
       return IX_PF;
@@ -747,7 +837,9 @@ RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
   {
     // deletion done
     return 0;
-  } else {
+  }
+  else
+  {
     // cerr << "root underflow" << endl;
 
   if(fileHdr.height == 1)
@@ -769,13 +861,16 @@ RC IX_IndexHandle::DeleteEntry(void *pData, const RID& rid)
     return IX_PF;
 
   SetHeight(fileHdr.height-1); // do all other init
-    return 0;
+  return 0;
   }
 }
-// return NULL if key, rid is not found
+
+// search other nodes(located in the leftside of the node) who contains the (key, rid)
+// return NULL if (key, rid) is not found
 IX_BTNode* IX_IndexHandle::DupScanLeftFind(IX_BTNode* right, void *pData, const RID& rid)
 {
   IX_BTNode* currNode = FetchNode(right->GetLeft());
+
   int currPos = -1;
 
   for( IX_BTNode* j = currNode;
@@ -791,19 +886,21 @@ IX_BTNode* IX_IndexHandle::DupScanLeftFind(IX_BTNode* right, void *pData, const 
       char* key = NULL;
       int ret = currNode->GetKey(i, (void*&)key);
       if(ret == -1)
-        break;
+        break;//error in get the key in the position i
       if(currNode->CompareKey(pData, key) < 0)
         return NULL;
       if(currNode->CompareKey(pData, key) > 0)
-        return NULL; // should never happen
+        return NULL;
       if(currNode->CompareKey(pData, key) == 0) {
         if(currNode->GetAddr(currPos) == rid)
           return currNode;
       }
+
     }
   }
   return NULL;
 }
+
 RC IX_IndexHandle::DisposePage(const PageNum& pageNum)
 {
   RC invalid = IsValid(); if(invalid) return invalid;
@@ -823,3 +920,4 @@ RC IX_IndexHandle::ForcePages()
 {
     return 0;
 }
+
