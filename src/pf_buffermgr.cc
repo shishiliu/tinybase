@@ -407,7 +407,8 @@ RC PF_BufferMgr::UnpinPage(int fd, PageNum pageNum)
 //
 RC PF_BufferMgr::FlushPages(int fd)
 {
-   RC rc, rcWarn = 0;  // return codes
+   RC rc = OK_RC;
+   RC rcWarn = OK_RC;  // return codes
 
 #ifdef PF_LOG
    char psMessage[100];
@@ -461,12 +462,7 @@ RC PF_BufferMgr::FlushPages(int fd)
 #ifdef PF_LOG
    WriteLog("All necessary pages flushed.\n");
 #endif
-
-   // Return warning or ok
-   if (0 != rcWarn) {
-      return rcWarn;
-   }
-   return rc;
+   return rcWarn;
 }
 
 //
