@@ -178,8 +178,8 @@ PF_BufferMgr::~PF_BufferMgr()
 RC PF_BufferMgr::GetPage(int fd, PageNum pageNum, char **ppBuffer,
       int bMultiplePins)
 {
-   RC  rc;     // return code
-   int slot;   // buffer slot where page is located
+   RC rc = OK_RC;     // return code
+   int slot = 0;   // buffer slot where page is located
 
 #ifdef PF_LOG
    char psMessage[100];
@@ -252,7 +252,7 @@ RC PF_BufferMgr::GetPage(int fd, PageNum pageNum, char **ppBuffer,
    *ppBuffer = bufTable[slot].pData;
 
    // Return ok
-   return (0);
+   return OK_RC;
 }
 
 //
@@ -266,8 +266,8 @@ RC PF_BufferMgr::GetPage(int fd, PageNum pageNum, char **ppBuffer,
 //
 RC PF_BufferMgr::AllocatePage(int fd, PageNum pageNum, char **ppBuffer)
 {
-   RC  rc;     // return code
-   int slot;   // buffer slot where page is located
+   RC rc = OK_RC;     // return code
+   int slot = 0;   // buffer slot where page is located
 
 #ifdef PF_LOG
    char psMessage[100];
@@ -304,7 +304,7 @@ RC PF_BufferMgr::AllocatePage(int fd, PageNum pageNum, char **ppBuffer)
    *ppBuffer = bufTable[slot].pData;
 
    // Return ok
-   return (0);
+   return rc;
 }
 
 //
@@ -318,8 +318,8 @@ RC PF_BufferMgr::AllocatePage(int fd, PageNum pageNum, char **ppBuffer)
 //
 RC PF_BufferMgr::MarkDirty(int fd, PageNum pageNum)
 {
-   RC  rc;       // return code
-   int slot;     // buffer slot where page is located
+   RC rc = OK_RC;       // return code
+   int slot = 0;     // buffer slot where page is located
 
 #ifdef PF_LOG
    char psMessage[100];
@@ -348,7 +348,7 @@ RC PF_BufferMgr::MarkDirty(int fd, PageNum pageNum)
       return (rc);
 
    // Return ok
-   return (0);
+   return OK_RC;
 }
 
 //
@@ -361,8 +361,8 @@ RC PF_BufferMgr::MarkDirty(int fd, PageNum pageNum)
 //
 RC PF_BufferMgr::UnpinPage(int fd, PageNum pageNum)
 {
-   RC  rc;       // return code
-   int slot;     // buffer slot where page is located
+   RC rc = OK_RC;       // return code
+   int slot = 0;     // buffer slot where page is located
 
    // The page must be found and pinned in the buffer
    if (OK_RC != (rc = hashTable.Find(fd, pageNum, slot))) {
@@ -392,7 +392,7 @@ RC PF_BufferMgr::UnpinPage(int fd, PageNum pageNum)
    }
 
    // Return ok
-   return (0);
+   return rc;
 }
 
 //
@@ -477,7 +477,7 @@ RC PF_BufferMgr::FlushPages(int fd)
 //
 RC PF_BufferMgr::ForcePages(int fd, PageNum pageNum)
 {
-   RC rc;  // return codes
+   RC rc = OK_RC;  // return codes
 
 #ifdef PF_LOG
    char psMessage[100];
@@ -514,7 +514,7 @@ WriteLog(psMessage);
       slot = next;
    }
 
-   return 0;
+   return rc;
 }
 
 
@@ -534,8 +534,8 @@ RC PF_BufferMgr::PrintBuffer()
    cout << "Contents in order from most recently used to "
       << "least recently used.\n";
 
-   int slot, next;
-   slot = first;
+   int slot = first;
+   int next = 0;
    while (slot != INVALID_SLOT) {
       next = bufTable[slot].next;
       cout << slot << " :: \n";
@@ -568,10 +568,9 @@ RC PF_BufferMgr::PrintBuffer()
 //       is called.
 RC PF_BufferMgr::ClearBuffer()
 {
-   RC rc;
-
-   int slot, next;
-   slot = first;
+   RC rc = OK_RC;
+   int slot = first;
+   int next = 0;
    while (slot != INVALID_SLOT) {
       next = bufTable[slot].next;
       if (bufTable[slot].pinCount == 0)
@@ -583,7 +582,7 @@ RC PF_BufferMgr::ClearBuffer()
       slot = next;
    }
 
-   return 0;
+   return rc;
 }
 
 //
@@ -602,8 +601,8 @@ RC PF_BufferMgr::ClearBuffer()
 //
 RC PF_BufferMgr::ResizeBuffer(int iNewSize)
 {
-   int i;
-   RC rc;
+   int i = 0;
+   RC rc = OK_RC;
 
    // First try and clear out the old buffer!
    ClearBuffer();
@@ -680,7 +679,7 @@ RC PF_BufferMgr::ResizeBuffer(int iNewSize)
    // Finally, delete the old buffer table
    delete [] pOldBufTable;
 
-   return 0;
+   return rc;
 }
 
 
