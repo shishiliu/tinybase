@@ -24,6 +24,7 @@
 #include "pf.h"
 #include "rm.h"
 #include "ix.h"
+#include "pf_buffermgr.h"
 
 using namespace std;
 
@@ -34,7 +35,7 @@ using namespace std;
 #define BADFILE      "/abc/def/xyz"   // bad file name
 #define STRLEN       39               // length of strings to index
 #define FEW_ENTRIES  20
-#define MANY_ENTRIES 100000
+#define MANY_ENTRIES 57971
 #define NENTRIES     200000           // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
 // reports when adding lots of entries
@@ -198,19 +199,19 @@ void LsFiles(const char *fileName) {
 //
 
 void ran(int n) {
-   int i, r, t, m;
+   int i = 0, r = 0, t = 0, m = 0;
 
    // Initialize values array
    for (i = 0; i < NENTRIES; i++)
       values[i] = i;
 
    // Randomize first n entries in values array
-   for (i = 0, m = n; i < n - 1; i++) {
-      r = (int) (rand() % m--);
-      t = values[m];
-      values[m] = values[r];
-      values[r] = t;
-   }
+//   for (i = 0, m = n; i < n - 1; i++) {
+//      r = (int) (rand() % m--);
+//      t = values[m];
+//      values[m] = values[r];
+//      values[r] = t;
+//   }
 }
 
 //
@@ -234,16 +235,19 @@ RC InsertIntEntries(IX_IndexHandle &ih, int nEntries) {
             return (rc);
       } else {
          if ((rc = ih.InsertEntry((void *) &value, rid)))
+         {
+            std::cout << i << std::endl;
             return (rc);
+         }
       }
 
       if ((i + 1) % PROG_UNIT == 0) {
          // cast to long for PC's
-         printf("\r\t%d%%    ", (int) ((i + 1)*100L / nEntries));
+         // printf("\r\t%d%%    ", (int) ((i + 1)*100L / nEntries));
          fflush(stdout);
       }
    }
-   printf("\r\t%d%%      \n", (int) (i * 100L / nEntries));
+   // printf("\r\t%d%%      \n", (int) (i * 100L / nEntries));
 
    // Return ok
    return (0);
@@ -559,7 +563,7 @@ RC Test2(void) {
            (rc = ixm.OpenIndex(FILENAME, index, ih)))
       return (rc);
 
-   ih.PrintTree();
+   //ih.PrintTree();
 
    // ensure inserted entries are all there
    if ((rc = VerifyIntIndex(ih, 0, FEW_ENTRIES, TRUE)))// ||
@@ -600,43 +604,56 @@ RC Test3(void) {
    IX_IndexHandle ih;
 
    printf("Test3: Delete many integer entries from an index... \n");
-   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof (int))) ||
-           (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-           (rc = InsertIntEntries(ih, MANY_ENTRIES)))
+   if (rc = ixm.CreateIndex(FILENAME, index, INT, sizeof (int)))
+   {
       return (rc);
+   }
 
-   ih.PrintTree();
+   if (rc = ixm.OpenIndex(FILENAME, index, ih))
+   {
+      return (rc);
+   }
+   
+   ih.getPfFileHandle()->getPfBufferMgr()->PrintBuffer();
+
+   if (rc = InsertIntEntries(ih, MANY_ENTRIES))
+   {
+      return (rc);
+   }
+      
+   ih.getPfFileHandle()->getPfBufferMgr()->PrintBuffer();
+   //ih.PrintTree();
    //   ih.PrintHeader();
    if ((rc = ixm.CloseIndex(ih)))
       return (rc);
-   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
-      return (rc);
-   if ((rc = VerifyIntIndex(ih, 0, MANY_ENTRIES, TRUE)))
-      return (rc);
-   // ensure an entry not inserted is not there
-   if ((rc = VerifyIntIndex(ih, MANY_ENTRIES, 1, FALSE)))
-      return (rc);
-   if ((rc = ixm.CloseIndex(ih)))
-      return (rc);
-   printf("******************After Deleteing*****************\n");
-   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
-      return (rc);
-   if ((rc = DeleteIntEntries(ih, nDelete)))
-      return (rc);
-   ih.PrintTree();
-   ih.PrintHeader();
-   if ((rc = ixm.CloseIndex(ih)))
-      return (rc);
-
-   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
-      return (rc);
-   if ((rc = VerifyIntIndex(ih, 0, nDelete, FALSE)))
-      return (rc);
-   // ensure an entry not inserted is not there
-   if ((rc = VerifyIntIndex(ih, nDelete, MANY_ENTRIES - nDelete, TRUE)))
-      return (rc);
-   if ((rc = ixm.CloseIndex(ih)))
-      return (rc);
+//   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
+//      return (rc);
+//   if ((rc = VerifyIntIndex(ih, 0, MANY_ENTRIES, TRUE)))
+//      return (rc);
+//   // ensure an entry not inserted is not there
+//   if ((rc = VerifyIntIndex(ih, MANY_ENTRIES, 1, FALSE)))
+//      return (rc);
+//   if ((rc = ixm.CloseIndex(ih)))
+//      return (rc);
+//   printf("******************After Deleteing*****************\n");
+//   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
+//      return (rc);
+//   if ((rc = DeleteIntEntries(ih, nDelete)))
+//      return (rc);
+//   //ih.PrintTree();
+//   ih.PrintHeader();
+//   if ((rc = ixm.CloseIndex(ih)))
+//      return (rc);
+//
+//   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
+//      return (rc);
+//   if ((rc = VerifyIntIndex(ih, 0, nDelete, FALSE)))
+//      return (rc);
+//   // ensure an entry not inserted is not there
+//   if ((rc = VerifyIntIndex(ih, nDelete, MANY_ENTRIES - nDelete, TRUE)))
+//      return (rc);
+//   if ((rc = ixm.CloseIndex(ih)))
+//      return (rc);
 
    LsFiles(FILENAME);
 
@@ -671,7 +688,7 @@ RC Test4(void) {
       return (rc);
    printf("insert finir.........\n");
 
-   ih.PrintTree();
+   //ih.PrintTree();
    // Scan <
    IX_IndexScan scanlt;
    if ((rc = scanlt.OpenScan(ih, LT_OP, &value))) {

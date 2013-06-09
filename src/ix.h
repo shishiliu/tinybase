@@ -20,6 +20,7 @@
 //
 // The leaf node and internal node used the same structure beacause the  internal node do not use 
 // the slot id part of the RID 
+
 class IX_BTNode {
    friend class IX_IndexHandle;
    friend class IX_IndexScan;
@@ -162,6 +163,9 @@ public:
    RC FindEntry(void *pData, const RID &rid);
    RC WriteHdr();
 
+   PF_FileHandle* getPfFileHandle() {
+      return pfFileHandle;
+   }
 private:
    // Copy constructor
    IX_IndexHandle(const IX_IndexHandle &fileHandle);
@@ -212,11 +216,11 @@ private:
    RC FindDupKey(const void *pData, RID& rid, int& pos, bool& flag);
    RC FindDupLeftKey(const void *pData, RID& rid, int& pos, bool& flag);
    RC FindDupRightKey(const void *pData, RID& rid, int& pos, bool& flag);
-   
-   RC FindLeaf(const void *pData, RID& r, int& pos);   
+
+   RC FindLeaf(const void *pData, RID& r, int& pos);
    RC FindLeftKey(const void *pData, RID& r, int& pos, bool& flag);
    RC FindRightKey(const void *pData, RID& r, int& pos, bool& flag);
-   
+
    RC FindNoEqualKey(const void *pData, RID& rid, int& pos, bool& flag);
 
    void FindNextRecInCurPage(char *pData);
@@ -246,6 +250,7 @@ private:
 //
 // IX_Manager: provides IX index file management
 //
+
 class IX_Manager {
 public:
    IX_Manager(PF_Manager &pfm);
