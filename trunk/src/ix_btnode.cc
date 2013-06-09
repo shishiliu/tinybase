@@ -125,7 +125,11 @@ RC IX_BTNode::InsertNode(const void* aKey, const RID & aRid)
     rids[i+1] = aRid;
     SetKey(i+1, aKey);
 
-    assert(TestSorted());
+    if (!TestSorted())
+    {
+       std::cout << "Test sorted" << std::endl;
+       TestSorted();
+    }
     SetKeysNumToPage(GetKeysNum()+1);
     return 0;
 }
