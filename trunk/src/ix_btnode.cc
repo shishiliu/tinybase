@@ -4,7 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <assert.h>
-#include "IX_BTNode.h"
+#include "ix.h"
 
 IX_BTNode::IX_BTNode(AttrType iAttrType, int iAttrLength, PF_PageHandle& xPageHandle, bool bNewPage)
 : attributeType(iAttrType)
