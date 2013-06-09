@@ -4,14 +4,16 @@
 //   Index Manager Component Interface
 //
 
-#ifndef IX_H
-#define IX_H
+#ifndef IX_FWD_H
+#define IX_FWD_H
 
 // Please do not include any other files than the ones below in this file.
 
 #include "redbase.h"  // Please don't change these lines
 #include "rm_rid.h"  // Please don't change these lines
 #include "pf.fwd.h"
+
+class IX_BTNode;
 
 ////////////////////////////////////////////////////////////////////
 //
