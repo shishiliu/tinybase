@@ -437,8 +437,8 @@ RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid, int detail) {
 
       IX_BTNode * parent = path[level];
       // update old key - keep same addr
-
       parent->DeleteNode(NULL, posAtParent);
+      
       result = parent->InsertNode((const void*) node->LargestKey(),
               node->GetNodeRID());
       // this result should always be good - we removed first before
@@ -448,6 +448,7 @@ RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid, int detail) {
       result = parent->InsertNode(newNode->LargestKey(), newNode->GetNodeRID());
 
       // iterate for parent node and split if required
+      pfFileHandle->UnpinPage(node->GetNodeRID().Page());
       node = parent;
       failedKey = newNode->LargestKey(); // failure cannot be in node -
       // something was removed first.
