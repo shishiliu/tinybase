@@ -35,7 +35,7 @@ using namespace std;
 #define BADFILE      "/abc/def/xyz"   // bad file name
 #define STRLEN       39               // length of strings to index
 #define FEW_ENTRIES  20
-#define MANY_ENTRIES 57971
+#define MANY_ENTRIES 90000
 #define NENTRIES     200000           // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
 // reports when adding lots of entries
@@ -206,12 +206,12 @@ void ran(int n) {
       values[i] = i;
 
    // Randomize first n entries in values array
-//   for (i = 0, m = n; i < n - 1; i++) {
-//      r = (int) (rand() % m--);
-//      t = values[m];
-//      values[m] = values[r];
-//      values[r] = t;
-//   }
+   for (i = 0, m = n; i < n - 1; i++) {
+      r = (int) (rand() % m--);
+      t = values[m];
+      values[m] = values[r];
+      values[r] = t;
+   }
 }
 
 //
@@ -233,10 +233,9 @@ RC InsertIntEntries(IX_IndexHandle &ih, int nEntries) {
       if (i < 340) {
          if ((rc = ih.InsertEntry((void *) &value, rid)))
             return (rc);
-      } else {
+      } else {         
          if ((rc = ih.InsertEntry((void *) &value, rid)))
          {
-            std::cout << i << std::endl;
             return (rc);
          }
       }
