@@ -18,10 +18,10 @@ using namespace std;
 //
 // main
 //
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-    char *dbname;
-    RC rc;
+    char *dbname = NULL;
+    RC rc = OK_RC;
 
     // Look for 2 arguments.  The first is always the name of the program
     // that was executed, and the second should be the name of the
@@ -38,4 +38,5 @@ main(int argc, char *argv[])
     // *********************************
 
     cout << "Bye.\n";
+    return rc;
 }

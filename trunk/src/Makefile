@@ -23,7 +23,7 @@ LEX            = flex
 # -O1 - Basic optimization
 # -Wall - All warnings
 # -DDEBUG_PF - This turns on the LOG file for lots of BufferMgr info
-CFLAGS         = -m32 -g -Wall -std=c++0x $(STATS_OPTION) $(INC_DIRS)
+CFLAGS         = -m32 -g -Wall -std=gnu++0x $(STATS_OPTION) $(INC_DIRS)
 
 # The STATS_OPTION can be set to -DPF_STATS or to nothing to turn on and
 # off buffer manager statistics.  The student should not modify this
@@ -38,10 +38,10 @@ PF_SOURCES     = pf_buffermgr.cc pf_error.cc pf_filehandle.cc \
                  pf_statistics.cc statistics.cc
 RM_SOURCES     = rm_rid.cc rm_record.cc rm_manager.cc rm_filescan.cc rm_filehandle.cc rm_error.cc
 IX_SOURCES     = ix_manager.cc ix_indexhandle.cc ix_indexscan.cc ix_error.cc ix_btnode.cc
-SM_SOURCES     = #sm_stub.cc printer.cc
+SM_SOURCES     = sm_error.cc sm_manager.cc sm_stub.cc printer.cc
 QL_SOURCES     = #ql_manager_stub.cc
-UTILS_SOURCES  = #dbcreate.cc dbdestroy.cc redbase.cc
-PARSER_SOURCES = #scan.c parse.c nodes.c interp.c
+UTILS_SOURCES  = dbcreate.cc dbdestroy.cc redbase.cc
+PARSER_SOURCES = scan.c parse.c nodes.c interp.c
 TESTER_SOURCES = pf_test1.cc pf_test2.cc pf_test3.cc rm_test.cc ix_test.cc #parser_test.cc
 
 PF_OBJECTS     = $(addprefix $(BUILD_DIR), $(PF_SOURCES:.cc=.o))
@@ -77,7 +77,7 @@ LIBS           = -lparser -lql -lsm -lix -lrm -lpf
 all: $(LIBRARIES) $(UTILS)
 
 clean:
-	rm -f $(BUILD_DIR)*.o $(BUILD_DIR)*.d y.output y.tab.h parse.c $(LIBRARIES) $(EXECUTABLES)
+	rm -f $(BUILD_DIR)*.o $(BUILD_DIR)*.d y.output y.tab.h parse.c scan.c $(LIBRARIES) $(EXECUTABLES)
 
 testers: all $(TESTS)
 

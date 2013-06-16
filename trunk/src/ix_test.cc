@@ -603,19 +603,19 @@ RC Test3(void) {
    IX_IndexHandle ih;
 
    printf("Test3: Delete many integer entries from an index... \n");
-   if (rc = ixm.CreateIndex(FILENAME, index, INT, sizeof (int)))
+   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof (int))))
    {
       return (rc);
    }
 
-   if (rc = ixm.OpenIndex(FILENAME, index, ih))
+   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
    {
       return (rc);
    }
    
    ih.getPfFileHandle()->getPfBufferMgr()->PrintBuffer();
 
-   if (rc = InsertIntEntries(ih, MANY_ENTRIES))
+   if ((rc = InsertIntEntries(ih, MANY_ENTRIES)))
    {
       return (rc);
    }
@@ -625,34 +625,34 @@ RC Test3(void) {
    //   ih.PrintHeader();
    if ((rc = ixm.CloseIndex(ih)))
       return (rc);
-//   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
-//      return (rc);
-//   if ((rc = VerifyIntIndex(ih, 0, MANY_ENTRIES, TRUE)))
-//      return (rc);
-//   // ensure an entry not inserted is not there
-//   if ((rc = VerifyIntIndex(ih, MANY_ENTRIES, 1, FALSE)))
-//      return (rc);
-//   if ((rc = ixm.CloseIndex(ih)))
-//      return (rc);
-//   printf("******************After Deleteing*****************\n");
-//   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
-//      return (rc);
-//   if ((rc = DeleteIntEntries(ih, nDelete)))
-//      return (rc);
-//   //ih.PrintTree();
-//   ih.PrintHeader();
-//   if ((rc = ixm.CloseIndex(ih)))
-//      return (rc);
-//
-//   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
-//      return (rc);
-//   if ((rc = VerifyIntIndex(ih, 0, nDelete, FALSE)))
-//      return (rc);
-//   // ensure an entry not inserted is not there
-//   if ((rc = VerifyIntIndex(ih, nDelete, MANY_ENTRIES - nDelete, TRUE)))
-//      return (rc);
-//   if ((rc = ixm.CloseIndex(ih)))
-//      return (rc);
+   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
+      return (rc);
+   if ((rc = VerifyIntIndex(ih, 0, MANY_ENTRIES, TRUE)))
+      return (rc);
+   // ensure an entry not inserted is not there
+   if ((rc = VerifyIntIndex(ih, MANY_ENTRIES, 1, FALSE)))
+      return (rc);
+   if ((rc = ixm.CloseIndex(ih)))
+      return (rc);
+   printf("******************After Deleteing*****************\n");
+   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
+      return (rc);
+   if ((rc = DeleteIntEntries(ih, nDelete)))
+      return (rc);
+   //ih.PrintTree();
+   ih.PrintHeader();
+   if ((rc = ixm.CloseIndex(ih)))
+      return (rc);
+
+   if ((rc = ixm.OpenIndex(FILENAME, index, ih)))
+      return (rc);
+   if ((rc = VerifyIntIndex(ih, 0, nDelete, FALSE)))
+      return (rc);
+   // ensure an entry not inserted is not there
+   if ((rc = VerifyIntIndex(ih, nDelete, MANY_ENTRIES - nDelete, TRUE)))
+      return (rc);
+   if ((rc = ixm.CloseIndex(ih)))
+      return (rc);
 
    LsFiles(FILENAME);
 
