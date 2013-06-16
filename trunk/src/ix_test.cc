@@ -613,16 +613,16 @@ RC Test3(void) {
       return (rc);
    }
    
-   ih.getPfFileHandle()->getPfBufferMgr()->PrintBuffer();
+  // ih.getPfFileHandle()->getPfBufferMgr()->PrintBuffer();
 
    if ((rc = InsertIntEntries(ih, MANY_ENTRIES)))
    {
       return (rc);
    }
       
-   ih.getPfFileHandle()->getPfBufferMgr()->PrintBuffer();
+  // ih.getPfFileHandle()->getPfBufferMgr()->PrintBuffer();
    //ih.PrintTree();
-   //   ih.PrintHeader();
+      ih.PrintHeader();
    if ((rc = ixm.CloseIndex(ih)))
       return (rc);
    if ((rc = ixm.OpenIndex(FILENAME, index, ih)))

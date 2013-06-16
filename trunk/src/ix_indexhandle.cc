@@ -616,7 +616,7 @@ void IX_IndexHandle::Print(int level, RID r) const {
    if (level == -1) {
       level = fileHdr.height;
       node = FetchNode(root->GetNodeRID());
-      std::cerr << "Print called with level " << level << std::endl;
+      std::cout << "Print called with level " << level << std::endl;
    } else {
       if (level < 1) {
          return;
@@ -625,7 +625,9 @@ void IX_IndexHandle::Print(int level, RID r) const {
       }
    }
 
-   std::cerr << (*node);
+   std::cout << (*node);
+   std::cout<<" "<<std::endl;
+   std::cout<<" "<<std::endl;
    //node->Print();
 
    if (level >= 2) // non leaf

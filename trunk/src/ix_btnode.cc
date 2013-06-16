@@ -389,25 +389,26 @@ std::ostream& operator<<(std::ostream &os, IX_BTNode &a) {
            << "Page RID:" << a.GetNodeRID().Page() << " "
            << "Keys Numbre:" << a.GetKeysNum() << " "
            << "{";
-   for (int pos = 0; pos < a.GetKeysNum(); pos++) {
-      void * k = NULL;
-      a.GetKey(pos, k);
-      os << "(";
-      if (a.GetType() == INT)
-         os << *((int*) k);
-      if (a.GetType() == FLOAT)
-         os << *((float*) k);
-      if (a.GetType() == STRING) {
-         for (int i = 0; i < a.GetAttrLength(); i++)
-            os << ((char*) k)[i];
-      }
-      PageNum P;
-      P = a.GetAddr(pos).Page();
-      SlotNum S;
-      S = a.GetAddr(pos).Slot();
-      os << "," << P << " " << S << "), ";
-
-   }
+   int pos;
+//   for (pos = 0; pos < a.GetKeysNum(); pos++) {
+//      void * k = NULL;
+//      a.GetKey(pos, k);
+//      os << "(";
+//      if (a.GetType() == INT)
+//         os << *((int*) k);
+//      if (a.GetType() == FLOAT)
+//         os << *((float*) k);
+//      if (a.GetType() == STRING) {
+//         for (int i = 0; i < a.GetAttrLength(); i++)
+//            os << ((char*) k)[i];
+//      }
+//      PageNum P;
+//      P = a.GetAddr(pos).Page();
+//      SlotNum S;
+//      S = a.GetAddr(pos).Slot();
+//      os << "," << P << " " << S << "), ";
+//
+//   }
    os << "}" << "->" << a.GetRight() << "\n";
    return os;
 }
