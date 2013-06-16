@@ -48,6 +48,9 @@ public:
         const Condition conditions[]);   // conditions in where clause
 
 private:
+    RM_Manager& rmm;
+    IX_Manager& ixm;
+    SM_Manager& smm;
 };
 
 //

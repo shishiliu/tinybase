@@ -69,12 +69,12 @@ void IX_BTNode::SetLeft(PageNum aPageId) {
 }
 
 PageNum IX_BTNode::GetRightFromPage() {
-   return right;
+   void * loc = (char*) rids + sizeof (RID) * order + sizeof (int) + sizeof (PageNum);
+   return *((PageNum*) loc);
 }
 
 PageNum IX_BTNode::GetRight() {
-   void * loc = (char*) rids + sizeof (RID) * order + sizeof (int) + sizeof (PageNum);
-   return *((PageNum*) loc);
+    return right;
 }
 
 void IX_BTNode::SetRight(PageNum aPageId) {
@@ -385,10 +385,8 @@ AttrType IX_BTNode::GetType() {
 }
 
 std::ostream& operator<<(std::ostream &os, IX_BTNode &a) {
-   os << a.GetLeft() << "<-"
-           << "Page RID:" << a.GetNodeRID().Page() << " "
-           << "Keys Numbre:" << a.GetKeysNum() << " "
-           << "{";
+  os<< a.GetLeft() << "<--" << a.GetNodeRID().Page() << "{";
+   os << "page# " << a.GetNodeRID().Page() << ";order " << a.GetOrder()<< ";numKeys " <<a.GetKeysNum()<< "{";
    int pos;
 //   for (pos = 0; pos < a.GetKeysNum(); pos++) {
 //      void * k = NULL;

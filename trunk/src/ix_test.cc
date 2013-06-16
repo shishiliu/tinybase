@@ -206,12 +206,12 @@ void ran(int n) {
       values[i] = i;
 
    // Randomize first n entries in values array
-   for (i = 0, m = n; i < n - 1; i++) {
-      r = (int) (rand() % m--);
-      t = values[m];
-      values[m] = values[r];
-      values[r] = t;
-   }
+//   for (i = 0, m = n; i < n - 1; i++) {
+//      r = (int) (rand() % m--);
+//      t = values[m];
+//      values[m] = values[r];
+//      values[r] = t;
+//   }
 }
 
 //
@@ -621,7 +621,7 @@ RC Test3(void) {
    }
       
   // ih.getPfFileHandle()->getPfBufferMgr()->PrintBuffer();
-   //ih.PrintTree();
+      ih.PrintTree();
       ih.PrintHeader();
    if ((rc = ixm.CloseIndex(ih)))
       return (rc);
@@ -639,7 +639,7 @@ RC Test3(void) {
       return (rc);
    if ((rc = DeleteIntEntries(ih, nDelete)))
       return (rc);
-   //ih.PrintTree();
+  ih.PrintTree();
    ih.PrintHeader();
    if ((rc = ixm.CloseIndex(ih)))
       return (rc);
