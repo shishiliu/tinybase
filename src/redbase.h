@@ -17,7 +17,7 @@
 #define MAXATTRS      40                // maximum number of attributes
                                         // in a relation
 
-#define yywrap() 1
+// #define yywrap() 1
 void yyerror(const char *);
 
 //
