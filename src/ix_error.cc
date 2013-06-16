@@ -28,18 +28,6 @@ static char *IX_WarnMsg[] = {
   (char*)"file closed"
 };
 
-#define IX_SIZETOOBIG      (START_IX_ERR - 0)  // key size too big
-#define IX_PF              (START_IX_ERR - 1)  // error in PF operations
-#define IX_BADIXPAGE       (START_IX_ERR - 2)  // bad page
-#define IX_FCREATEFAIL     (START_IX_ERR - 3)  //
-#define IX_HANDLEOPEN      (START_IX_ERR - 4)  // error handle open
-#define IX_BADOPEN         (START_IX_ERR - 5)  // the index is alread open
-#define IX_FNOTOPEN        (START_IX_ERR - 6)  //
-#define IX_BADRID          (START_IX_ERR - 7)  // bad rid
-#define IX_BADKEY          (START_IX_ERR - 8)  // bad key
-#define IX_NOSUCHENTRY     (START_IX_ERR - 9)  //
-#define IX_KEYNOTFOUND     (START_IX_ERR - 10) // key is not found
-#define IX_INVALIDSIZE     (START_IX_ERR - 11) // btnode's size(order) is invalid
 
 
 static char *IX_ErrorMsg[] = {
