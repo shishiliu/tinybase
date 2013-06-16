@@ -25,7 +25,7 @@ using namespace std;
 //
 // Constructor for the QL Manager
 //
-QL_Manager::QL_Manager(SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm)
+QL_Manager::QL_Manager(SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm):smm(smm),ixm(ixm),rmm(rmm)
 {
     // Can't stand unused variable warnings!
     assert (&smm && &ixm && &rmm);
