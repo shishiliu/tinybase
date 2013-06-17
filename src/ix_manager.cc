@@ -8,7 +8,7 @@
 #include "redbase.h"
 #include "pf.h"
 #include <stdio.h>
-// 
+//
 // IX_Manager
 //
 // Desc: Constructor
@@ -21,7 +21,7 @@ IX_Manager::IX_Manager(PF_Manager &pfm)
 
 //
 // ~IX_Manager
-// 
+//
 // Desc: Destructor
 //
 IX_Manager::~IX_Manager()
@@ -41,14 +41,14 @@ IX_Manager::~IX_Manager()
 
 /**
  * This method creates an index numbered indexNo on the data file named fileName.
- * You may assume that clients of this method will ensure that the indexNo parameter is unique 
- * and nonnegative for each index created on a file. 
- * Thus, indexNo can be used along with fileName to generate a unique file 
+ * You may assume that clients of this method will ensure that the indexNo parameter is unique
+ * and nonnegative for each index created on a file.
+ * Thus, indexNo can be used along with fileName to generate a unique file
  * name (e.g., "fileName.indexNo") that you can use for the PF component file storing the new index.
- * The type and length of the attribute being indexed are described by parameters attrType and attrLength, 
- * respectively. As in the RM component, attrLength should be 4 for attribute types INT or FLOAT, 
- * and it should be between 1 and MAXSTRINGLEN for attribute type STRING. 
- * This method should establish an empty index by creating the PF component file and initializing it appropriately. 
+ * The type and length of the attribute being indexed are described by parameters attrType and attrLength,
+ * respectively. As in the RM component, attrLength should be 4 for attribute types INT or FLOAT,
+ * and it should be between 1 and MAXSTRINGLEN for attribute type STRING.
+ * This method should establish an empty index by creating the PF component file and initializing it appropriately.
  */
 RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType, int attrLength)
 {
@@ -60,37 +60,52 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType,
    // 1.create a file with name "fileName.indexNo"
    // Note that PF_Manager::CreateFile() will take care of fileName
    // Call PF_Manager::CreateFile()
-   if(indexNo < 0||fileName == NULL)
+   if(indexNo < 0)
    {
+       rc = IX_NEGATIVEINDEXNUM;
        goto err_return;
    }//todo:specific the error
+   if(fileName == NULL)
+   {
+       rc = IX_NONEXISTFILE;
+       goto err_return;
+   }
+   //2.analyse attribute type:Sanity Check: attrType, attrLength
+  switch (attrType)
+  {
+     case INT:
+        if (attrLength != 4)
+        {
+           rc = IX_INVALIDATTR;
+           goto err_return;
+        }
+        break;
 
+     case FLOAT:
+        if (attrLength != 4)
+        {
+           rc = IX_INVALIDATTR;
+           goto err_return;
+        }
+        break;
+     case STRING:
+        if (attrLength < 1 || attrLength > MAXSTRINGLEN)
+        {
+           rc = IX_INVALIDATTR;
+           goto err_return;
+        }
+        break;
+     default:
+        rc = IX_INVALIDATTR;
+        goto err_return;
+  }
+
+   //creat the index
    char indexFileName[20];//at the beginning, the length of the index name is fixed;
    sprintf(indexFileName,"%s.%d",fileName,indexNo);
    // Test: existing fileName, wrong permission
    if ((rc = pPfm->CreateFile(indexFileName))) {
        goto err_return;
-   }
-
-//2.analyse attribute type:Sanity Check: attrType, attrLength
-   switch (attrType) 
-   {
-      case INT:
-      case FLOAT:
-         if (attrLength != 4)
-            // Test: wrong _attrLength
-            return (IX_INVALIDATTR);
-         break;
-
-      case STRING:
-         if (attrLength < 1 || attrLength > MAXSTRINGLEN)
-            // Test: wrong _attrLength
-            return (IX_INVALIDATTR);
-         break;
-
-      default:
-         // Test: wrong _attrType
-         return (IX_INVALIDATTR);
    }
 
    // Call PF_Manager::OpenFile()
@@ -128,13 +143,13 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType,
       // Should not happen
       goto err_unpin;
    }
-   
+
    // Unpin the header page
    if ((rc = pfFileHandle.UnpinPage(IX_HEADER_PAGE_NUM))) {
       // Should not happen
       goto err_close;
    }
-   
+
    // Call PF_Manager::CloseFile()
    if ((rc = pPfm->CloseFile(pfFileHandle))) {
       // Should not happen
@@ -169,14 +184,11 @@ RC IX_Manager::DestroyIndex(const char *fileName, int indexNo)
     char indexFileName[20];//at the beginning, the length of the index name is fixed;
     sprintf(indexFileName,"%s.%d",fileName,indexNo);
     // Call PF_Manager::DestroyFile()
-    if ((rc = pPfm->DestroyFile(indexFileName)))
+    if (rc = pPfm->DestroyFile(indexFileName))
     {
        // Test: non-existing fileName, wrong permission
        goto err_return;
     }
-    // Return ok
-    return (0);
-
     // Return ok
     return (0);
 
@@ -202,48 +214,43 @@ RC IX_Manager::OpenIndex(const char *fileName, int indexNo, IX_IndexHandle& inde
 {
    RC rc;
    PF_PageHandle pageHandle;
+   PF_FileHandle fileHandle;
    char* pData;
 
    char indexFileName[20];//at the beginning, the length of the index name is fixed;
    sprintf(indexFileName,"%s.%d",fileName,indexNo);
 
-   // Call PF_Manager::OpenFile()
-
-   //PF_FileHandle* pfHandle;
-   //RC PF_Manager::OpenFile (const char *fileName, PF_FileHandle &fileHandle)
-   PF_FileHandle fileHandle;
-   if ((rc = pPfm->OpenFile(indexFileName, fileHandle)))
+   if (rc = pPfm->OpenFile(indexFileName, fileHandle))
    {
       // Test: non-existing fileName, opened fileHandle
       goto err_return;
    }
 
    // Get the header page
-   if ((rc = fileHandle.GetFirstPage(pageHandle)))
+   if (rc = fileHandle.GetFirstPage(pageHandle))
    {
       // Test: invalid file
       goto err_close;
    }
 
    // Get a pointer where header information resides
-   if ((rc = pageHandle.GetData(pData)))
+   if (rc = pageHandle.GetData(pData))
       // Should not happen
       goto err_unpin;
 
    // Read the file header (from the buffer pool to IX_FileHandle)
    memcpy(&indexHandle.fileHdr, pData, sizeof(indexHandle.fileHdr));
 
-   if ((rc = indexHandle.Open(fileHandle))) {
+   if(rc = indexHandle.Open(fileHandle))
+   {
        goto err_unpin;
-    }
+   }
 
    // Unpin the header page
-   if ((rc = indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM)))
-      // Should not happen
+   if (rc = indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM))
+   {
       goto err_close;
-
-   // TODO: cannot guarantee the validity of file header at this time
-
+   }
    // Return ok
    return (0);
 
@@ -251,12 +258,11 @@ RC IX_Manager::OpenIndex(const char *fileName, int indexNo, IX_IndexHandle& inde
 err_unpin:
    indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM);
 err_close:
-   pPfm->CloseFile(*indexHandle.pfFileHandle);
+   pPfm->CloseFile(fileHandle);
 err_return:
    // Return error
    return (rc);
 }
-
 
 //
 // CloseFile
@@ -278,12 +284,12 @@ RC IX_Manager::CloseIndex(IX_IndexHandle &indexHandle)
       char* pData;
 
       // Get the header page
-      if ((rc = indexHandle.pfFileHandle->GetFirstPage(pageHandle)))
+      if (rc = indexHandle.pfFileHandle->GetFirstPage(pageHandle))
          // Test: unopened(closed) indexHandle, invalid file
          goto err_return;
 
       // Get a pointer where header information will be written
-      if ((rc = pageHandle.GetData(pData)))
+      if (rc = pageHandle.GetData(pData))
          // Should not happen
          goto err_unpin;
 
@@ -291,12 +297,12 @@ RC IX_Manager::CloseIndex(IX_IndexHandle &indexHandle)
       memcpy(pData, &indexHandle.fileHdr, sizeof(indexHandle.fileHdr));
 
       // Mark the header page as dirty
-      if ((rc = indexHandle.pfFileHandle->MarkDirty(IX_HEADER_PAGE_NUM)))
+      if (rc = indexHandle.pfFileHandle->MarkDirty(IX_HEADER_PAGE_NUM))
          // Should not happen
          goto err_unpin;
 
       // Unpin the header page
-      if ((rc = indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM)))
+      if (rc = indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM))
          // Should not happen
          goto err_return;
 
@@ -305,9 +311,12 @@ RC IX_Manager::CloseIndex(IX_IndexHandle &indexHandle)
    }
    // Call PF_Manager::CloseFile()
 
-   indexHandle.Close();
+   if(rc = indexHandle.Close())
+   {
+       goto err_return;
+    }
 
-   if ((rc = pPfm->CloseFile(*indexHandle.pfFileHandle)))
+   if (rc = pPfm->CloseFile(*indexHandle.pfFileHandle))
    {
        goto err_return;
    }
@@ -326,5 +335,4 @@ err_return:
    // Return error
    return (rc);
 }
-
 
