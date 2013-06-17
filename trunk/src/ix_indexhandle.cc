@@ -97,7 +97,15 @@ RC IX_IndexHandle::Open(PF_FileHandle &fileHandle) {
 }
 
 RC IX_IndexHandle::Close() {
-    bFileOpen = false;
+    if(bFileOpen != true)
+     {
+       return IX_CLOSEFILENONEXIST;
+     }
+     else
+     {
+       bFileOpen = false;
+     }
+
     if (pathP != NULL) {
         delete [] pathP;
         pathP = NULL;
