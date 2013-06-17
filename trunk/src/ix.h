@@ -171,13 +171,10 @@ private:
    IX_IndexHandle(const IX_IndexHandle &fileHandle);
    // Overloaded =
    IX_IndexHandle& operator=(const IX_IndexHandle &fileHandle);
-
-
-
    PF_FileHandle* pfFileHandle;
    IX_FileHdr fileHdr; // file header
    int bHdrChanged; // dirty flag for file hdr
-   //=================================================================================
+   //===============================================================
    bool bFileOpen;
    IX_BTNode* root; // root in turn points to the other nodes
    IX_BTNode** path;
