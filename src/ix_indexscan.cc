@@ -144,9 +144,7 @@ RC IX_IndexScan::GetNextEntry(RID &rid) {
 
    // Sanity Check: 'this' must be open
    if (!bScanOpen)
-      return (IX_CLOSEDSCAN);
-
-   bool currDeleted = false;
+      return (IX_CLOSEDSCAN);   
 
    // first time in
    if (currNode == NULL && currPos == -1 && scanCount == 0) {
@@ -157,7 +155,6 @@ RC IX_IndexScan::GetNextEntry(RID &rid) {
       //std::cerr<<"current rid page:"<<currRid.Page()<<std::endl;
       //std::cerr<<"current position:"<<currPos<<std::endl;
       //std::cerr<<"current node:"<<*currNode<<std::endl;     
-      currDeleted = false;
       scanCount++;
    } else {
 

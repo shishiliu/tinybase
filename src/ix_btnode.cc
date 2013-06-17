@@ -387,7 +387,7 @@ AttrType IX_BTNode::GetType() {
 std::ostream& operator<<(std::ostream &os, IX_BTNode &a) {
   os<< a.GetLeft() << "<--" << a.GetNodeRID().Page() << "{";
    os << "page# " << a.GetNodeRID().Page() << ";order " << a.GetOrder()<< ";numKeys " <<a.GetKeysNum()<< "{";
-   int pos;
+//   int pos;
 //   for (pos = 0; pos < a.GetKeysNum(); pos++) {
 //      void * k = NULL;
 //      a.GetKey(pos, k);

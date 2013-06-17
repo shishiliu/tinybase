@@ -25,25 +25,25 @@ RC createRelcat(void)
    SM_RelcatRec relcatRec;
    RID rid;
 
-   if (rc = rmm.CreateFile(RELCAT, sizeof(SM_RelcatRec)))
+   if ((rc = rmm.CreateFile(RELCAT, sizeof(SM_RelcatRec))))
       goto err_return;
 
-   if (rc = rmm.OpenFile(RELCAT, fh))
+   if ((rc = rmm.OpenFile(RELCAT, fh)))
       goto err_return;
 
    SM_SetRelcatRec(relcatRec,
                    RELCAT, sizeof(SM_RelcatRec), 4, 0);
 
-   if (rc = fh.InsertRec((char *)&relcatRec, rid))
+   if ((rc = fh.InsertRec((char *)&relcatRec, rid)))
       goto err_close;
 
    SM_SetRelcatRec(relcatRec,
                    ATTRCAT, sizeof(SM_AttrcatRec), 6, 0);
 
-   if (rc = fh.InsertRec((char *)&relcatRec, rid))
+   if ((rc = fh.InsertRec((char *)&relcatRec, rid)))
       goto err_close;
 
-   if (rc = rmm.CloseFile(fh))
+   if ((rc = rmm.CloseFile(fh)))
       goto err_return;
 
    // Return ok

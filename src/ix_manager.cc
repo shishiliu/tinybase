@@ -184,7 +184,7 @@ RC IX_Manager::DestroyIndex(const char *fileName, int indexNo)
     char indexFileName[20];//at the beginning, the length of the index name is fixed;
     sprintf(indexFileName,"%s.%d",fileName,indexNo);
     // Call PF_Manager::DestroyFile()
-    if (rc = pPfm->DestroyFile(indexFileName))
+    if ((rc = pPfm->DestroyFile(indexFileName)))
     {
        // Test: non-existing fileName, wrong permission
        goto err_return;
@@ -220,34 +220,34 @@ RC IX_Manager::OpenIndex(const char *fileName, int indexNo, IX_IndexHandle& inde
    char indexFileName[20];//at the beginning, the length of the index name is fixed;
    sprintf(indexFileName,"%s.%d",fileName,indexNo);
 
-   if (rc = pPfm->OpenFile(indexFileName, fileHandle))
+   if ((rc = pPfm->OpenFile(indexFileName, fileHandle)))
    {
       // Test: non-existing fileName, opened fileHandle
       goto err_return;
    }
 
    // Get the header page
-   if (rc = fileHandle.GetFirstPage(pageHandle))
+   if ((rc = fileHandle.GetFirstPage(pageHandle)))
    {
       // Test: invalid file
       goto err_close;
    }
 
    // Get a pointer where header information resides
-   if (rc = pageHandle.GetData(pData))
+   if ((rc = pageHandle.GetData(pData)))
       // Should not happen
       goto err_unpin;
 
    // Read the file header (from the buffer pool to IX_FileHandle)
    memcpy(&indexHandle.fileHdr, pData, sizeof(indexHandle.fileHdr));
 
-   if(rc = indexHandle.Open(fileHandle))
+   if((rc = indexHandle.Open(fileHandle)))
    {
        goto err_unpin;
    }
 
    // Unpin the header page
-   if (rc = indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM))
+   if ((rc = indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM)))
    {
       goto err_close;
    }
@@ -284,12 +284,12 @@ RC IX_Manager::CloseIndex(IX_IndexHandle &indexHandle)
       char* pData;
 
       // Get the header page
-      if (rc = indexHandle.pfFileHandle->GetFirstPage(pageHandle))
+      if ((rc = indexHandle.pfFileHandle->GetFirstPage(pageHandle)))
          // Test: unopened(closed) indexHandle, invalid file
          goto err_return;
 
       // Get a pointer where header information will be written
-      if (rc = pageHandle.GetData(pData))
+      if ((rc = pageHandle.GetData(pData)))
          // Should not happen
          goto err_unpin;
 
@@ -297,12 +297,12 @@ RC IX_Manager::CloseIndex(IX_IndexHandle &indexHandle)
       memcpy(pData, &indexHandle.fileHdr, sizeof(indexHandle.fileHdr));
 
       // Mark the header page as dirty
-      if (rc = indexHandle.pfFileHandle->MarkDirty(IX_HEADER_PAGE_NUM))
+      if ((rc = indexHandle.pfFileHandle->MarkDirty(IX_HEADER_PAGE_NUM)))
          // Should not happen
          goto err_unpin;
 
       // Unpin the header page
-      if (rc = indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM))
+      if ((rc = indexHandle.pfFileHandle->UnpinPage(IX_HEADER_PAGE_NUM)))
          // Should not happen
          goto err_return;
 
@@ -311,12 +311,12 @@ RC IX_Manager::CloseIndex(IX_IndexHandle &indexHandle)
    }
    // Call PF_Manager::CloseFile()
 
-   if(rc = indexHandle.Close())
+   if ((rc = indexHandle.Close()))
    {
        goto err_return;
     }
 
-   if (rc = pPfm->CloseFile(*indexHandle.pfFileHandle))
+   if ((rc = pPfm->CloseFile(*indexHandle.pfFileHandle)))
    {
        goto err_return;
    }
