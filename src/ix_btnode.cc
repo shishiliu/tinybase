@@ -107,10 +107,12 @@ RID IX_BTNode::GetNodeRID() {
 
 RC IX_BTNode::InsertNode(const void* aKey, const RID & aRid) {
    if (keysNum >= order) return -1; //need to add the state code
+
    int i = -1;
 
    void *currKey = NULL;
-   for (i = keysNum - 1; i >= 0; i--) {
+   for (i = keysNum - 1; i >= 0; i--)
+   {
       GetKey(i, currKey);
       if (CompareKey(aKey, currKey) >= 0) {
          break; // go out and insert at i
@@ -118,7 +120,6 @@ RC IX_BTNode::InsertNode(const void* aKey, const RID & aRid) {
       rids[i + 1] = rids[i];
       SetKey(i + 1, currKey);
    }
-
    rids[i + 1] = aRid;
    SetKey(i + 1, aKey);
 
@@ -198,7 +199,8 @@ RC IX_BTNode::SplitNode(IX_BTNode * aNewNode) {
    int movePos = (keysNum + 1) / 2;
    int moveCount = (keysNum - movePos);
    if (aNewNode->GetKeysNum() + moveCount > aNewNode->GetOrder()) return -1; //fails
-   for (int i = movePos; i < keysNum; i++) {
+   for (int i = movePos; i < keysNum; i++)
+   {
       RID rid = *(rids + i);
       void * k;
       GetKey(i, k);
@@ -387,26 +389,26 @@ AttrType IX_BTNode::GetType() {
 std::ostream& operator<<(std::ostream &os, IX_BTNode &a) {
   os<< a.GetLeft() << "<--" << a.GetNodeRID().Page() << "{";
    os << "page# " << a.GetNodeRID().Page() << ";order " << a.GetOrder()<< ";numKeys " <<a.GetKeysNum()<< "{";
-//   int pos;
-//   for (pos = 0; pos < a.GetKeysNum(); pos++) {
-//      void * k = NULL;
-//      a.GetKey(pos, k);
-//      os << "(";
-//      if (a.GetType() == INT)
-//         os << *((int*) k);
-//      if (a.GetType() == FLOAT)
-//         os << *((float*) k);
-//      if (a.GetType() == STRING) {
-//         for (int i = 0; i < a.GetAttrLength(); i++)
-//            os << ((char*) k)[i];
-//      }
-//      PageNum P;
-//      P = a.GetAddr(pos).Page();
-//      SlotNum S;
-//      S = a.GetAddr(pos).Slot();
-//      os << "," << P << " " << S << "), ";
-//
-//   }
+   int pos;
+   for (pos = 0; pos < a.GetKeysNum(); pos++) {
+      void * k = NULL;
+      a.GetKey(pos, k);
+      os << "(";
+      if (a.GetType() == INT)
+         os << *((int*) k);
+      if (a.GetType() == FLOAT)
+         os << *((float*) k);
+      if (a.GetType() == STRING) {
+         for (int i = 0; i < a.GetAttrLength(); i++)
+            os << ((char*) k)[i];
+      }
+      PageNum P;
+      P = a.GetAddr(pos).Page();
+      SlotNum S;
+      S = a.GetAddr(pos).Slot();
+      os << "," << P << " " << S << "), ";
+
+   }
    os << "}" << "->" << a.GetRight() << "\n";
    return os;
 }

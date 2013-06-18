@@ -252,64 +252,92 @@ RC IX_IndexScan::CloseScan() {
    return (0);
 }
 
-//find the leaf rightmost
-
 RC IX_IndexScan::FindLeaf(const void *pData, RID& r, int& pos) {
    RC rc = OK_RC;
    IX_BTNode* node = pIndexHandle->GetRoot();
+   int i = 0;
 
-   for (int i = 1; i < pIndexHandle->fileHdr.height; i++) {
-      r = node->FindAddrBrut(pData);
+   for (i = 1; i < pIndexHandle->fileHdr.height; i++) {
+      r = node->FindAddrBrut(pData);      
       pos = node->FindKeyBrut(pData);
-
-      //std::cerr<<"1.rid page:"<<r.Page()<<std::endl;
-      //std::cerr<<"1.pos:"<<pos<<std::endl;
-
-      //the key is larger than any other keys in the node
       if (r.Page() == -1) {
-         // pData is bigger than any other key - return address of node
-         // that largest key points to.
          const void * p = node->LargestKey();
-         // std::cerr << "p was " << *(int*)p << std::endl;
          r = node->FindAddrExact((const void*&) (p));
-         // std::cerr << "r was " << r << std::endl;
+      }
+      if((pos == node->GetKeysNum()-1)&&(node->GetRight()!=-1))
+      {
+          IX_BTNode* bnode = pIndexHandle->FetchNode(node->GetRight());
+          char* key = NULL;
+          rc = bnode->GetKey(0,(void*&) key);//compare the pData with the smallest key in the right brother
+          if (rc != 0)
+          {
+              return rc;
+          }
+          if (bnode->CompareKey(pData, key) >= 0)
+          {
+              r = bnode->FindAddrExact(pData);
+              pos = bnode->FindKeyExact(pData);
+              node = bnode;
+          }
       }
       node = pIndexHandle->FetchNode(r.Page());
-      //r = node->FindAddrBrut(pData);
-      //std::cerr<<"pos:"<<pos<<std::endl;
    }
    //the node is the leaf
    if (NULL != node) {
       r = node->FindAddrExact(pData);
       pos = node->FindKeyExact(pData);
+      if((pos == node->GetKeysNum()-1)&&(node->GetRight()!=-1))
+      {
+          IX_BTNode* bnode = pIndexHandle->FetchNode(node->GetRight());
+          char* key = NULL;
+          rc = bnode->GetKey(0,(void*&) key);//compare the pData with the smallest key in the right brother
+          if (rc != 0)
+          {
+              return rc;
+          }
+          if (bnode->CompareKey(pData, key) >= 0)
+          {
+              r = bnode->FindAddrExact(pData);
+              pos = bnode->FindKeyExact(pData);
+              node = bnode;
+          }
+      }
       currNode = node;
-   } else {
+   }
+   else
+   {
       rc = IX_EOF;
    }
-   //std::cerr<<"node page:"<<node->GetNodeRID().Page()<<" node key#:"<<node->GetKeysNum()<<std::endl;
-   //std::cerr<<"2.rid page:"<<r.Page()<<std::endl;
-   //std::cerr<<"2.pos:"<<pos<<std::endl;
    return rc;
 }
 
 RC IX_IndexScan::FindDupKey(const void *pData, RID& rid, int& pos, bool& flag) {
-   //the first time: the entry itself
-   if (scanCount == 1) {
-      char *key;
-      RC rc = currNode->GetKey(pos, (void*&) key);
-      if (rc != 0) {
-         return rc;
-      }
-      if (currNode->CompareKey(pData, key) == 0) {
-         flag = true;
-         return (0);
-      }
-   }
+    RC rc;
+    char *key = NULL;
+
+    //the first time: the entry itself
+    if (scanCount == 1)
+    {
+        key = NULL;
+        rc = currNode->GetKey(pos, (void*&) key);
+        if (rc != 0)
+        {
+            return rc;
+        }
+        if (currNode->CompareKey(pData, key) == 0)
+        {
+            flag = true;
+            return (0);
+          }
+    }
+
+    IX_BTNode* j = currNode;
+
+    key = NULL;
 
    //the position of the next node
    int pos_t = pos - 1;
-
-   for (IX_BTNode* j = currNode;
+   for (j = currNode;
            j != NULL;
            ) {
       if (pos_t < 0) {
@@ -322,9 +350,9 @@ RC IX_IndexScan::FindDupKey(const void *pData, RID& rid, int& pos, bool& flag) {
          pos_t = currNode->GetKeysNum() - 1;
       }
       pos = pos_t;
-      char* key = NULL;
+      key = NULL;
       //search key in the next node
-      RC rc = currNode->GetKey(pos, (void*&) key);
+      rc = currNode->GetKey(pos, (void*&) key);
       if (rc != 0) {
          return rc;
       }
