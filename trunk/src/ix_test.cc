@@ -36,6 +36,7 @@ using namespace std;
 #define STRLEN       39               // length of strings to index
 #define FEW_ENTRIES  20
 #define MANY_ENTRIES 57971
+//#define MANY_ENTRIES 2000
 #define NENTRIES     200000           // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
 // reports when adding lots of entries
@@ -456,7 +457,15 @@ RC VerifyIntIndex(IX_IndexHandle &ih, int nStart, int nEntries, int bExists) {
       }
 
       //printf("%d:scan value = %d\n",i,value);
-      rc = scan.GetNextEntry(rid);
+      if(value < 170)
+      {
+        rc = scan.GetNextEntry(rid);
+      }
+      else
+      {
+        //printf("%d:scan value = %d\n",i,value);
+        rc = scan.GetNextEntry(rid);
+      }
       //printf("%d:scan value = %d,rid = (%d,%d),rc = %d,bExiste = %d\n",i,value,rid.Page(),rid.Slot(),rc,bExists);
 
       if (!bExists && rc == 0) {
@@ -621,7 +630,7 @@ RC Test3(void) {
    }
       
   // ih.getPfFileHandle()->getPfBufferMgr()->PrintBuffer();
-      ih.PrintTree();
+  //    ih.PrintTree();
       ih.PrintHeader();
    if ((rc = ixm.CloseIndex(ih)))
       return (rc);
@@ -639,7 +648,7 @@ RC Test3(void) {
       return (rc);
    if ((rc = DeleteIntEntries(ih, nDelete)))
       return (rc);
-  ih.PrintTree();
+   //ih.PrintTree();
    ih.PrintHeader();
    if ((rc = ixm.CloseIndex(ih)))
       return (rc);

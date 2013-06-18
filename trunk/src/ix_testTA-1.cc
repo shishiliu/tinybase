@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
    printf("All done with the TA TEST!\n\n");
 
 #ifdef PF_STATS
-   delete pStatisticsMgr;
+     //delete pStatisticsMgr;
 #endif
 
    return (0);
@@ -983,6 +983,8 @@ RC Test7(void)
    if (rc != IX_EOF)
       return (rc);
 
+
+
    if (i != nDups + 1) {
       printf("Didn't find correct number of duplicates\n");
       return (IX_EOF); // What should be returned here?
@@ -1083,7 +1085,7 @@ RC Test10(void)
 {
    RC             rc;
    IX_IndexHandle ih;
-   int            index=0;      
+   int            index=0;
    int            i;
    int            value=MANY_ENTRIES/2;
    RID            rid;
@@ -1152,7 +1154,7 @@ RC Test10(void)
       return (rc);
 
    if (i != MANY_ENTRIES - value) {
-      printf("GT_OP scan error: found %d entries, expected %d\n", 
+      printf("GT_OP scan error: found %d entries, expected %d\n",
             i, MANY_ENTRIES - value);
       return (IX_EOF); // What should be returned here?
    }
@@ -1170,7 +1172,7 @@ RC Test10(void)
       return (rc);
 
    if (i != MANY_ENTRIES - value + 1) {
-      printf("GE_OP scan error: found %d entries, expected %d\n", 
+      printf("GE_OP scan error: found %d entries, expected %d\n",
             i, MANY_ENTRIES - value + 1);
       return (IX_EOF); // What should be returned here?
    }

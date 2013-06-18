@@ -1340,16 +1340,28 @@ RC Test1(void)
    }
 
    ihOK5.PrintTree();
+   ihOK5.PrintHeader();
 
    cout << "Deleting all of the indices for half of the values\n";
    for (i = 1; i < 26; i++) {
-      jishu = 0;
+      jishu = 1;
 
       value = i * 10;
       if ((rc = indScn.OpenScan(ihOK5, EQ_OP, &value)))
          goto end;
       while ((rc = indScn.GetNextEntry(rid)) == 0) {
-         jishu++;
+
+          if(value < 70)
+          {
+              jishu++;
+              cout<<"+++++value:"<<value<<" pageNum:"<<rid.Page()<<endl;
+          }
+          else
+          {
+          jishu++;
+          cout<<"+++++value:"<<value<<" pageNum:"<<rid.Page()<<endl;
+          }
+
          if ((rc = ihOK5.DeleteEntry(&value, rid))) goto end;
       }      
       cout<<"+++++value:"<<value<<"jishu:"<<jishu<<endl;
@@ -1358,8 +1370,6 @@ RC Test1(void)
       if ((rc = indScn.CloseScan()))
          goto end;
    }
-
-
 
    cout << "Verifying count of remaining values\n";
    for (i = 26; i < 51; i++) {

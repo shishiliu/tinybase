@@ -534,24 +534,16 @@ IX_BTNode* IX_IndexHandle::FindLeaf(const void *pData) {
         return root;
     }
 
+    RID r;
     //height > 1
     for (int i = 1; i < fileHdr.height; i++) {
-        //std::cerr << "i was " << i << std::endl;
-        //std::cerr << "pData was " << *(int*)pData << std::endl;
+        int pos = path[i - 1]->FindKeyBrut(pData);
+        r = path[i - 1]->FindAddrBrut(pData);
 
-        RID r = path[i - 1]->FindAddrBrut(pData); // return position if key will fit in a particular position
-        // return (-1, -1) if the key does not exist in the node
-        // if there are dups - this will return rightmost position
-        int pos = path[i - 1]->FindKeyBrut(pData); // return position if key will fit in a particular position
-        // return (-1, -1) if the key does not exist in the node
-        // if there are dups - this will return rightmost position
-        if (r.Page() == -1) {
-            // pData is bigger than any other key - return address of node
-            // that largest key points to.
+        if (r.Page() == -1)
+        {
             const void * p = path[i - 1]->LargestKey();
-            // std::cerr << "p was " << *(int*)p << std::endl;
             r = path[i - 1]->FindAddrExact((const void*&) (p));
-            // std::cerr << "r was " << r << std::endl;
             pos = path[i - 1]->FindKeyExact((const void*&) (p));
         }
 
@@ -572,10 +564,43 @@ IX_BTNode* IX_IndexHandle::FindLeaf(const void *pData) {
         if (rc != 0) return NULL;
 
         pathP[i - 1] = pos;
+    }        
+
+
+    IX_BTNode *node = path[fileHdr.height-1];
+    //check the right sibling node to ensure the node is the rightmost node
+    int pos = node->FindKeyBrut(pData);
+    if((pos == node->GetKeysNum()-1)&&(node->GetRight()!=(-1)))
+    {
+        IX_BTNode* bnode = FetchNode(node->GetRight());
+        char* key = NULL;
+        RC rc = bnode->GetKey(0,(void*&) key);//compare the pData with the smallest key in the right brother
+        if (rc != 0)
+        {
+            return NULL;
+        }
+        if (bnode->CompareKey(pData, key) >= 0)
+        {
+            pos = bnode->FindKeyExact(pData);
+            node = bnode;
+            // start with a fresh path
+            if (path[fileHdr.height-1] != NULL) {
+                RC rc = pfFileHandle->UnpinPage(path[fileHdr.height-1]->GetNodeRID().Page());
+                if (rc != 0) return NULL;
+                delete path[fileHdr.height-1];
+                path[fileHdr.height-1] = NULL;
+            }
+            path[fileHdr.height-1] = bnode;
+            PF_PageHandle dummy;
+            // pin path pages
+            RC rc = pfFileHandle->GetThisPage(path[fileHdr.height-1]->GetNodeRID().Page(), dummy);
+            if (rc != 0) return NULL;
+            pathP[fileHdr.height-2] = pos;
+        }
     }
+
     return path[fileHdr.height - 1];
 }
-
 
 // get/set height
 
