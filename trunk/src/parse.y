@@ -705,7 +705,17 @@ ostream &operator<<(ostream &s, const AttrType &at)
    }
    return s;
 }
-
+ostream &operator<<(ostream &s, const AggRelAttr &qa)
+{
+   if(qa.func == NO_F)
+   return 
+      s << (qa.relName ? qa.relName : "NULL")
+      << "." << qa.attrName;
+  else
+   return
+      s << qa.func << "(" << (qa.relName ? qa.relName : "NULL")
+        << "." << qa.attrName << ")";
+}
 /*
  * Required by yacc
  */
@@ -717,7 +727,7 @@ void yyerror(char const *s) // New in 2000
 #if 0
 /*
  * Sometimes required
- */
+ */z
 int yywrap(void)
 {
    return 1;

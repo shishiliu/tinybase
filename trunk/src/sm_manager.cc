@@ -1097,3 +1097,14 @@ err_return:
    return (rc);
 }
 
+RC sm_manager::GetFromTable(const char * relName, int& attrCount, DataAttrInfo *&attributes){
+	RM_FileScan rfs;
+	RC rc;
+	void * value = const_cast<char*>(relName);
+	if(rc=rfs.OpenScan(fhRelcat,STRING,MAXNAME+1,offsetof(DataRelInfo,relName),EQ_OP,value,NO_HINT))
+	{
+	    return rc;	
+	}
+	
+}
+
