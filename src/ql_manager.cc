@@ -8,11 +8,14 @@
 
 #include <cstdio>
 #include <iostream>
+#include <algorithm>
 #include <sys/times.h>
 #include <sys/types.h>
 #include <cassert>
 #include <unistd.h>
 #include "redbase.h"
+#include "printer.h"
+#include "ql_error.h"
 #include "ql.h"
 #include "sm.h"
 #include "ix.h"
@@ -20,15 +23,23 @@
 
 using namespace std;
 
+bool strlt(char* i, char* j) {
+	return (strcmp(i, j) < 0);
+}
+
+bool streq(char* i, char* j) {
+	return (strcmp(i, j) == 0);
+}
 //
 // QL_Manager::QL_Manager(SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm)
 //
 // Constructor for the QL Manager
 //
-QL_Manager::QL_Manager(SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm):smm(smm),ixm(ixm),rmm(rmm)
-{
-    // Can't stand unused variable warnings!
-    assert (&smm && &ixm && &rmm);
+
+QL_Manager::QL_Manager(SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm) :
+	smm(smm), ixm(ixm), rmm(rmm) {
+	// Can't stand unused variable warnings!
+	assert(&smm && &ixm && &rmm);
 }
 
 //
@@ -36,99 +47,129 @@ QL_Manager::QL_Manager(SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm):smm(sm
 //
 // Destructor for the QL Manager
 //
-QL_Manager::~QL_Manager()
-{
+
+QL_Manager::~QL_Manager() {
 }
 
 //
 // Handle the select clause
 //
-RC QL_Manager::Select(int nSelAttrs, const RelAttr selAttrs[],
-                      int nRelations, const char * const relations[],
-                      int nConditions, const Condition conditions[])
-{
-    int i;
 
-    cout << "Select\n";
+RC QL_Manager::Select(int nSelAttrs, const AggRelAttr selAttrs[],
+		int nRelations, const char * const relations[], int nConditions,
+		const Condition conditions[]) {
+	int i;
+	RelAttr* mSelAttrs = new RelAttr[nSelAttrs];
+	for (i = 0; i < nSelAttrs; i++) {
+		mSelAttrs[i].relName = selAttrs[i].relName;
+		mSelAttrs[i].attrName = selAttrs[i].attrName;
+	}
+	AggRelAttr* mSelAggAttrs = new AggRelAttr[nSelAttrs];
+	for (i = 0; i < nSelAttrs; i++) {
+		mSelAggAttrs[i].func = selAttrs[i].func;
+		mSelAggAttrs[i].relName = selAttrs[i].relName;
+		mSelAggAttrs[i].attrName = selAttrs[i].attrName;
+	}
+	char** mRelations = new char*[nRelations];
+	for (i = 0; i < nRelations; i++) {
+		mRelations[i] = strdup(relations[i]);
+	}
+	Condition * mConditions = new Condition[nConditions];
+	for (i = 0; i < nConditions; i++) {
+		mConditions[i] = conditions[i];
+	}
+	////need to check the variabilty of the query here later
+	sort(mRelations, mRelations+nRelations, strlt);
 
-    cout << "   nSelAttrs = " << nSelAttrs << "\n";
-    for (i = 0; i < nSelAttrs; i++)
-        cout << "   selAttrs[" << i << "]:" << selAttrs[i] << "\n";
+	char ** dup = adjacent_find(mRelations, mRelations+nRelations, streq);
 
-    cout << "   nRelations = " << nRelations << "\n";
-    for (i = 0; i < nRelations; i++)
-        cout << "   relations[" << i << "] " << relations[i] << "\n";
+	if(dup!=(mRelations + nRelations)) return QL_DUPREL;
+	
+	bool selectStar = false;
+	if(nSekAttrs == 1 &&  strcmp(mSelAttrs[0].attrName,"*")==0){
+		selectStar = true;
+		//nSelAttrs = 0;
+		for(int i = 0;i<nRelations;i++){
+			int  a;
+		}
+		
+	}
+	
+	cout << "Select\n";
 
-    cout << "   nCondtions = " << nConditions << "\n";
-    for (i = 0; i < nConditions; i++)
-        cout << "   conditions[" << i << "]:" << conditions[i] << "\n";
+	cout << "   nSelAttrs = " << nSelAttrs << "\n";
+	for (i = 0; i < nSelAttrs; i++)
+		cout << "   selAttrs[" << i << "]:" << selAttrs[i] << "\n";
 
-    return 0;
+	cout << "   nRelations = " << nRelations << "\n";
+	for (i = 0; i < nRelations; i++)
+		cout << "   relations[" << i << "] " << relations[i] << "\n";
+
+	cout << "   nCondtions = " << nConditions << "\n";
+	for (i = 0; i < nConditions; i++)
+		cout << "   conditions[" << i << "]:" << conditions[i] << "\n";
+
+	return 0;
 }
 
 //
 // Insert the values into relName
 //
-RC QL_Manager::Insert(const char *relName,
-                      int nValues, const Value values[])
-{
-    int i;
 
-    cout << "Insert\n";
+RC QL_Manager::Insert(const char *relName, int nValues, const Value values[]) {
+	int i;
 
-    cout << "   relName = " << relName << "\n";
-    cout << "   nValues = " << nValues << "\n";
-    for (i = 0; i < nValues; i++)
-        cout << "   values[" << i << "]:" << values[i] << "\n";
+	cout << "Insert\n";
 
-    return 0;
+	cout << "   relName = " << relName << "\n";
+	cout << "   nValues = " << nValues << "\n";
+	for (i = 0; i < nValues; i++)
+		cout << "   values[" << i << "]:" << values[i] << "\n";
+
+	return 0;
 }
 
 //
 // Delete from the relName all tuples that satisfy conditions
 //
-RC QL_Manager::Delete(const char *relName,
-                      int nConditions, const Condition conditions[])
-{
-    int i;
 
-    cout << "Delete\n";
+RC QL_Manager::Delete(const char *relName, int nConditions,
+		const Condition conditions[]) {
+	int i;
 
-    cout << "   relName = " << relName << "\n";
-    cout << "   nCondtions = " << nConditions << "\n";
-    for (i = 0; i < nConditions; i++)
-        cout << "   conditions[" << i << "]:" << conditions[i] << "\n";
+	cout << "Delete\n";
 
-    return 0;
+	cout << "   relName = " << relName << "\n";
+	cout << "   nCondtions = " << nConditions << "\n";
+	for (i = 0; i < nConditions; i++)
+		cout << "   conditions[" << i << "]:" << conditions[i] << "\n";
+
+	return 0;
 }
-
 
 //
 // Update from the relName all tuples that satisfy conditions
 //
-RC QL_Manager::Update(const char *relName,
-                      const RelAttr &updAttr,
-                      const int bIsValue,
-                      const RelAttr &rhsRelAttr,
-                      const Value &rhsValue,
-                      int nConditions, const Condition conditions[])
-{
-    int i;
 
-    cout << "Update\n";
+RC QL_Manager::Update(const char *relName, const RelAttr &updAttr,
+		const int bIsValue, const RelAttr &rhsRelAttr, const Value &rhsValue,
+		int nConditions, const Condition conditions[]) {
+	int i;
 
-    cout << "   relName = " << relName << "\n";
-    cout << "   updAttr:" << updAttr << "\n";
-    if (bIsValue)
-        cout << "   rhs is value: " << rhsValue << "\n";
-    else
-        cout << "   rhs is attribute: " << rhsRelAttr << "\n";
+	cout << "Update\n";
 
-    cout << "   nCondtions = " << nConditions << "\n";
-    for (i = 0; i < nConditions; i++)
-        cout << "   conditions[" << i << "]:" << conditions[i] << "\n";
+	cout << "   relName = " << relName << "\n";
+	cout << "   updAttr:" << updAttr << "\n";
+	if (bIsValue)
+		cout << "   rhs is value: " << rhsValue << "\n";
+	else
+		cout << "   rhs is attribute: " << rhsRelAttr << "\n";
 
-    return 0;
+	cout << "   nCondtions = " << nConditions << "\n";
+	for (i = 0; i < nConditions; i++)
+		cout << "   conditions[" << i << "]:" << conditions[i] << "\n";
+
+	return 0;
 }
 
 //
@@ -137,7 +178,7 @@ RC QL_Manager::Update(const char *relName,
 // This function will accept an Error code and output the appropriate
 // error.
 //
-void QL_PrintError(RC rc)
-{
-    cout << "QL_PrintError\n   rc=" << rc << "\n";
+
+void QL_PrintError(RC rc) {
+	cout << "QL_PrintError\n   rc=" << rc << "\n";
 }

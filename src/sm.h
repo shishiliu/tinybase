@@ -12,6 +12,7 @@
 #include <string.h>
 #include "redbase.h"  // Please don't change these lines
 #include "parser.h"
+#include "printer.h"
 #include "rm.h"
 #include "ix.h"
 
@@ -45,7 +46,10 @@ public:
 
     RC Set        (const char *paramName,         // set parameter to
                    const char *value);            //   value
-
+    ////Get the attributes with Rm filescan
+    RC GetFromTable(const char *relName,           // create relation relName
+                      int&        attrCount,         // number of attributes
+                      DataAttrInfo   *&attributes);  // attribute data
 private:
     // Copy constructor
     SM_Manager(const SM_Manager &manager);

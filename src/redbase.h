@@ -19,7 +19,11 @@
 
 // #define yywrap() 1
 void yyerror(const char *);
-
+enum AggFun {
+  NO_F,
+  MIN_F, MAX_F, COUNT_F, 
+  SUM_F, AVG_F           // numeric args only
+};
 //
 // Return codes
 //
