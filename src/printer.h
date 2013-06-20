@@ -13,7 +13,6 @@
 #include "redbase.h"      // For definition of MAXNAME
 
 #define MAXPRINTSTRING  ((2*MAXNAME) + 5)
-
 //
 // DataAttrInfo
 //
@@ -61,6 +60,61 @@ struct DataAttrInfo
     int      attrLength;            // Length of attribute
     int      indexNo;               // Index number of attribute
     AggFun func; //Aggregate function on attributes
+};
+
+struct DataRelInfo
+{
+  // Default constructor
+  DataRelInfo() {
+    memset(relName, 0, MAXNAME + 1);
+  }
+
+  DataRelInfo( char * buf ) {
+    memcpy(this, buf, DataRelInfo::size());
+  }
+
+  // Copy constructor
+  DataRelInfo( const DataRelInfo &d ) {
+    strcpy (relName, d.relName);
+    attrCount = d.attrCount;
+    tupleLength = d.tupleLength;
+    indexCount = d.indexCount;
+//    recordSize = d.recordSize;
+//    numPages = d.numPages;
+//    numRecords = d.numRecords;
+  };
+
+  DataRelInfo& operator=(const DataRelInfo &d) {
+    if (this != &d) {
+      strcpy (relName, d.relName);
+      attrCount = d.attrCount;
+      tupleLength = d.tupleLength;
+      indexCount = d.indexCount;
+//      recordSize = d.recordSize;
+//      numPages = d.numPages;
+//      numRecords = d.numRecords;
+    }
+    return (*this);
+  }
+
+  static unsigned int size() {
+//    return (MAXNAME+1) + 6*sizeof(int);
+    return (MAXNAME+1) + 3*sizeof(int);
+  }
+
+  static unsigned int members() {
+//    return 7;
+      return 4;
+  }
+
+  char     relName[MAXNAME+1];    // Relation name
+  int      attrCount;             // # of attributes
+  int      tupleLength;           //tuple length in bytes
+  int      indexCount;            // # of indexed attributes
+//
+//  int      recordSize;            // Size per row
+//  int      numPages;              // # of pages used by relation
+//  int      numRecords;            // # of records in relation
 };
 
 // Print some number of spaces

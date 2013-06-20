@@ -4,11 +4,10 @@
 /* handouts) with other students.                      */
 
 !ls
-create table student(no i, name c20, dept c4, GPA f, comment c3);
-load student("../student.data");
+  create table major(majorid c6, name c50, deptid c5);
+  insert into major values("PhdCS","ABC","MATH");
 !ls
 
-print student;
-select * from student;
+print major;
 
 exit;

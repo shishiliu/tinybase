@@ -15,7 +15,8 @@
 #include "printer.h"
 #include "rm.h"
 #include "ix.h"
-
+//
+#include "printer.h"
 //
 // SM_Manager: provides data management
 //
@@ -46,18 +47,17 @@ public:
 
     RC Set        (const char *paramName,         // set parameter to
                    const char *value);            //   value
-    ////Get the attributes with Rm filescan
-    RC GetFromTable(const char *relName,           // create relation relName
-                      int&        attrCount,         // number of attributes
-                      DataAttrInfo   *&attributes);  // attribute data
 private:
     // Copy constructor
     SM_Manager(const SM_Manager &manager);
     // Overloaded =
     SM_Manager& operator=(const SM_Manager &manager);
 
+    //Get relation informtion by accessing catalog RELCAT
     RC GetRelationInfo(const char *relName, RM_Record &rec, char *&data);
+    //sets attribute count by accessing catalog RELCAT
     RC SetRelationIndexCount(const char *relName, int value);
+    //Get attribute informtion by accessing catalog ATTRCAT
     RC GetAttributeInfo(const char *relName, const char *attrName,
                         RM_Record &rec, char *&data);
 
@@ -67,6 +67,16 @@ private:
     RM_FileHandle fhAttrcat;
 
     int useIndexNo;
+//
+    // attributes is allocated and returned back with attrCount elements.
+    // attrCount is returned back with number of attributes
+    RC GetFromTable(const char *relName,           // create relation relName
+                    int&        attrCount,         // number of attributes
+                    DataAttrInfo *&attributes);  // attribute data
+    RC InsertRecord(const char *relName,
+                    int&        attrCount,
+                    DataAttrInfo  *& attributes,
+                    const char *data);
 };
 
 //
@@ -89,6 +99,7 @@ void SM_PrintError(RC rc);
 #define SM_LASTWARN        SM_PARAMUNDEFINED
 
 #define SM_NOMEM           (START_SM_ERR - 0)  // no memory
-#define SM_LASTERROR       SM_NOMEM
+#define SM_BADTABLE        (START_SM_ERR - 1)  // bad table
+#define SM_LASTERROR       SM_BADTABLE
 
 #endif

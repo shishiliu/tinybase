@@ -995,7 +995,7 @@ RC SM_Manager::GetRelationInfo(const char *relName,
 
    // Find the matching record
    if ((rc = fs.GetNextRec(rec))) {
-      rc = (rc == RM_EOF) ? SM_RELNOTFOUND : rc;
+      rc = ((rc == RM_EOF) ? SM_RELNOTFOUND : rc);
       goto err_closescan;
    } else {
       if ((rc = rec.GetData(data)))
@@ -1097,14 +1097,138 @@ err_return:
    return (rc);
 }
 
-RC sm_manager::GetFromTable(const char * relName, int& attrCount, DataAttrInfo *&attributes){
-	RM_FileScan rfs;
-	RC rc;
-	void * value = const_cast<char*>(relName);
-	if(rc=rfs.OpenScan(fhRelcat,STRING,MAXNAME+1,offsetof(DataRelInfo,relName),EQ_OP,value,NO_HINT))
-	{
-	    return rc;	
-	}
-	
+// Get general information from the 2 catalogs
+// output:attrCount (from relcat)
+//        attributes (from attrcat)
+// attributes is allocated and returned. destruction is user's responsibility
+RC SM_Manager::GetFromTable(const char *relName,
+                            int&        attrCount,
+                            DataAttrInfo  *& attributes)
+{
+    RC rc;
+    RM_Record tmpRec;
+    char *relcatData;
+    char _relName[MAXNAME];
+    RM_FileScan fs;
+    RM_Record rec;
+    //RM_FileHandle fh;
+    int i = 0;
+
+    // Get the attribute count
+    if ((rc = GetRelationInfo(relName, tmpRec, relcatData)))
+       return (rc);
+
+    attrCount = ((SM_RelcatRec *)relcatData)->attrCount;
+    // Allocate attributes array
+    attributes = new DataAttrInfo[attrCount];
+    if (attributes == NULL)
+       return (SM_NOMEM);
+
+    // Open a file scan for ATTRCAT
+    memset(_relName, '\0', sizeof(_relName));
+    strncpy(_relName, relName, MAXNAME);
+    if ((rc = fs.OpenScan(fhAttrcat, STRING, MAXNAME,
+                         OFFSET(SM_AttrcatRec, relName), EQ_OP, _relName))) {
+       delete [] attributes;
+       return (rc);
+    }
+
+    // Fill out attributes array
+    while (((rc = fs.GetNextRec(rec)) != RM_EOF)) {
+       char *data;
+
+       if (rc != 0) {
+          fs.CloseScan();
+          delete [] attributes;
+          return (rc);
+       }
+
+       if ((rc = rec.GetData(data))) {
+          fs.CloseScan();
+          delete [] attributes;
+          return (rc);
+       }
+
+       SM_SetAttrcatRec(attributes[i],
+                        ((SM_AttrcatRec *)data)->relName,
+                        ((SM_AttrcatRec *)data)->attrName,
+                        ((SM_AttrcatRec *)data)->offset,
+                        ((SM_AttrcatRec *)data)->attrType,
+                        ((SM_AttrcatRec *)data)->attrLength,
+                        ((SM_AttrcatRec *)data)->indexNo);
+       if (++i == ((SM_RelcatRec *)relcatData)->attrCount)
+          break;
+    }
+
+    // Close a file scan for ATTRCAT
+    if ((rc = fs.CloseScan())) {
+       delete [] attributes;
+       return (rc);
+    }
+    return (rc);
+}
+
+RC SM_Manager::InsertRecord(const char *relName,
+                            int&        attrCount,
+                            DataAttrInfo  *& attributes,
+                            const char *data)
+{
+    RC rc;
+    RM_FileHandle fh;
+    IX_IndexHandle *ihs = NULL;
+    RID rid;
+    int i =0;
+
+    // Open relation file
+    if ((rc = pRmm->OpenFile(relName, fh)))
+       goto err_deleteihs;
+
+    // Open indexes(it depends on the attribute)
+    for (i = 0; i < attrCount; i++)
+    {
+       if (attributes[i].indexNo == -1)
+          continue;
+       if ((rc = pIxm->OpenIndex(relName, attributes[i].indexNo, ihs[i])))
+          goto err_closeindexes;
+    }
+    // Insert the record
+    if ((rc = fh.InsertRec(data, rid)))
+       goto err_closeindexes;
+
+    // Update indexes
+    for (i = 0; i < attrCount; i++)
+    {
+       if (attributes[i].indexNo == -1)
+          continue;
+       if ((rc = ihs[i].InsertEntry(data + attributes[i].offset, rid)))
+          goto err_closeindexes;
+    }
+    // Close indexes
+    for (i = 0; i < attrCount; i++) {
+       if (attributes[i].indexNo == -1)
+          continue;
+       if ((rc = pIxm->CloseIndex(ihs[i])))
+          goto err_closeindexes;
+    }
+
+    // Close relation file
+    if ((rc = pRmm->CloseFile(fh)))
+       goto err_deleteihs;
+
+    // Deallocate
+    delete [] ihs;
+
+    // Return ok
+    return (0);
+err_closeindexes:
+   for (i = 0; i < attrCount; i++)
+      if (attributes[i].indexNo != -1)
+         pIxm->CloseIndex(ihs[i]);
+//err_closefile:
+   pRmm->CloseFile(fh);
+err_deleteihs:
+   delete [] ihs;
+err_return:
+   return (rc);
 }
 

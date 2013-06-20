@@ -495,7 +495,6 @@ char *yytext;
  */
 
 #include <string.h>
-#include <stdio.h>
 #include "redbase.h"          /* parse.h needs the definition of real */
 #include "parser_internal.h"  /* y.tab.h needs the definition of NODE */
 #include "y.tab.h"
@@ -505,7 +504,7 @@ static char *get_qstring(char *qstring, int len);
 
 
 
-#line 509 "lex.yy.c"
+#line 508 "lex.yy.c"
 
 #define INITIAL 0
 #define comment 1
@@ -694,9 +693,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 28 "scan.l"
+#line 27 "scan.l"
 
-#line 700 "lex.yy.c"
+#line 699 "lex.yy.c"
 
 	if ( !(yy_init) )
 		{
@@ -781,139 +780,139 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 29 "scan.l"
+#line 28 "scan.l"
 {BEGIN(comment);}
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 30 "scan.l"
+#line 29 "scan.l"
 {/* ignore the text of the comment */}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 31 "scan.l"
+#line 30 "scan.l"
 {BEGIN(INITIAL);}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 32 "scan.l"
+#line 31 "scan.l"
 {/* ignore *'s that aren't part of */}
 	YY_BREAK
 case 5:
 /* rule 5 can match eol */
 YY_RULE_SETUP
-#line 33 "scan.l"
+#line 32 "scan.l"
 {/* ignore spaces, tabs, and newlines */}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 34 "scan.l"
+#line 33 "scan.l"
 {sscanf(yytext, "%d", &yylval.ival);
                       return T_INT;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 36 "scan.l"
+#line 35 "scan.l"
 {sscanf(yytext, "%f", &yylval.rval);
                       return T_REAL;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 38 "scan.l"
+#line 37 "scan.l"
 {sscanf(yytext, "%f", &yylval.rval);
                              return T_REAL;}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 40 "scan.l"
+#line 39 "scan.l"
 {yylval.sval = get_qstring(yytext, yyleng);
                              return T_QSTRING;}
 	YY_BREAK
 case 10:
 /* rule 10 can match eol */
 YY_RULE_SETUP
-#line 42 "scan.l"
+#line 41 "scan.l"
 {printf("newline in string constant\n");}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 43 "scan.l"
+#line 42 "scan.l"
 {return get_id(yylval.sval = yytext);}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 44 "scan.l"
+#line 43 "scan.l"
 {return T_LT;}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 45 "scan.l"
+#line 44 "scan.l"
 {return T_LE;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 46 "scan.l"
+#line 45 "scan.l"
 {return T_GT;}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 47 "scan.l"
+#line 46 "scan.l"
 {return T_GE;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 48 "scan.l"
+#line 47 "scan.l"
 {return T_EQ;}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 49 "scan.l"
+#line 48 "scan.l"
 {return T_NE;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 50 "scan.l"
+#line 49 "scan.l"
 {return T_NE;}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 51 "scan.l"
+#line 50 "scan.l"
 {BEGIN(shell_cmd);}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 52 "scan.l"
+#line 51 "scan.l"
 {yylval.sval = yytext; return T_SHELL_CMD;}
 	YY_BREAK
 case 21:
 /* rule 21 can match eol */
 YY_RULE_SETUP
-#line 53 "scan.l"
+#line 52 "scan.l"
 {BEGIN(INITIAL);}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 54 "scan.l"
+#line 53 "scan.l"
 {return yytext[0];}
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(comment):
 case YY_STATE_EOF(shell_cmd):
-#line 55 "scan.l"
+#line 54 "scan.l"
 {return T_EOF;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 56 "scan.l"
+#line 55 "scan.l"
 {printf("illegal character [%c]\n", yytext[0]);}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 57 "scan.l"
+#line 56 "scan.l"
 ECHO;
 	YY_BREAK
-#line 917 "lex.yy.c"
+#line 916 "lex.yy.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -1909,7 +1908,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 57 "scan.l"
+#line 56 "scan.l"
 
 
 #include "scanhelp.c"

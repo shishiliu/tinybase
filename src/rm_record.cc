@@ -69,4 +69,25 @@ RC RM_Record::GetRid(RID &_rid) const
    // Return ok
    return (0);
 }
+// int RM_Record::getRecordSize() const
+// {
+//      return recordSize;
+// }
+
+// Allows a resetting as long as size matches.
+RC RM_Record::Set(char *data, int size, RID r)
+{
+    if(recordSize != -1 && (size != recordSize))
+    {
+        return RM_INVALIDRECSIZE;
+    }
+    recordSize = size;
+    this->rid = r;
+    if (pData == NULL)
+    {
+            pData = new char[recordSize];
+    }
+    memcpy( pData, data,size);
+    return 0;
+}
 
