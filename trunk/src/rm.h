@@ -38,7 +38,8 @@ public:
 
     // Return the RID associated with the record
     RC GetRid (RID &rid) const;
-
+//
+    RC Set(char *pData, int size, RID rid_);
 private:
     // Copy constructor
     RM_Record  (const RM_Record &record);
@@ -83,6 +84,7 @@ public:
     // from the buffer pool to disk.  Default value forces all pages.
     RC ForcePages (PageNum pageNum = ALL_PAGES);
 
+    int GetNumPages() const { return fileHdr.numRecords;}
 private:
     // Copy constructor
     RM_FileHandle  (const RM_FileHandle &fileHandle);

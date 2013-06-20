@@ -1,3 +1,9 @@
+//
+// File:        dbcreate.cc
+// Description: dbcreate command line utility
+// Author:      Hyunjung Park (hyunjung@stanford.edu)
+//
+
 #include <iostream>
 #include <cstring>
 #include <unistd.h>
@@ -68,83 +74,83 @@ RC createAttrcat(void)
    SM_AttrcatRec attrcatRec;
    RID rid;
 
-   if (rc = rmm.CreateFile(ATTRCAT, sizeof(SM_AttrcatRec)))
+   if ((rc = rmm.CreateFile(ATTRCAT, sizeof(SM_AttrcatRec))))
       goto err_return;
 
-   if (rc = rmm.OpenFile(ATTRCAT, fh))
+   if ((rc = rmm.OpenFile(ATTRCAT, fh)))
       goto err_return;
 
    SM_SetAttrcatRec(attrcatRec, 
                     RELCAT, "relName", OFFSET(SM_RelcatRec, relName),
                     STRING, MAXNAME, -1);
 
-   if (rc = fh.InsertRec((char *)&attrcatRec, rid))
+   if ((rc = fh.InsertRec((char *)&attrcatRec, rid)))
       goto err_close;
 
    SM_SetAttrcatRec(attrcatRec, 
                     RELCAT, "tupleLength", OFFSET(SM_RelcatRec, tupleLength),
                     INT, sizeof(int), -1);
 
-   if (rc = fh.InsertRec((char *)&attrcatRec, rid))
+   if ((rc = fh.InsertRec((char *)&attrcatRec, rid)))
       goto err_close;
 
    SM_SetAttrcatRec(attrcatRec, 
                     RELCAT, "attrCount", OFFSET(SM_RelcatRec, attrCount),
                     INT, sizeof(int), -1);
 
-   if (rc = fh.InsertRec((char *)&attrcatRec, rid))
+   if ((rc = fh.InsertRec((char *)&attrcatRec, rid)))
       goto err_close;
 
    SM_SetAttrcatRec(attrcatRec, 
                     RELCAT, "indexCount", OFFSET(SM_RelcatRec, indexCount),
                     INT, sizeof(int), -1);
 
-   if (rc = fh.InsertRec((char *)&attrcatRec, rid))
+   if ((rc = fh.InsertRec((char *)&attrcatRec, rid)))
       goto err_close;
 
    SM_SetAttrcatRec(attrcatRec, 
                     ATTRCAT, "relName", OFFSET(SM_AttrcatRec, relName),
                     STRING, MAXNAME, -1);
 
-   if (rc = fh.InsertRec((char *)&attrcatRec, rid))
+   if ((rc = fh.InsertRec((char *)&attrcatRec, rid)))
       goto err_close;
 
    SM_SetAttrcatRec(attrcatRec, 
                     ATTRCAT, "attrName", OFFSET(SM_AttrcatRec, attrName),
                     STRING, MAXNAME, -1);
 
-   if (rc = fh.InsertRec((char *)&attrcatRec, rid))
+   if ((rc = fh.InsertRec((char *)&attrcatRec, rid)))
       goto err_close;
 
    SM_SetAttrcatRec(attrcatRec, 
                     ATTRCAT, "offset", OFFSET(SM_AttrcatRec, offset),
                     INT, sizeof(int), -1);
 
-   if (rc = fh.InsertRec((char *)&attrcatRec, rid))
+   if ((rc = fh.InsertRec((char *)&attrcatRec, rid)))
       goto err_close;
 
    SM_SetAttrcatRec(attrcatRec, 
                     ATTRCAT, "attrType", OFFSET(SM_AttrcatRec, attrType),
                     INT, sizeof(int), -1);
 
-   if (rc = fh.InsertRec((char *)&attrcatRec, rid))
+   if ((rc = fh.InsertRec((char *)&attrcatRec, rid)))
       goto err_close;
 
    SM_SetAttrcatRec(attrcatRec, 
                     ATTRCAT, "attrLength", OFFSET(SM_AttrcatRec, attrLength),
                     INT, sizeof(int), -1);
 
-   if (rc = fh.InsertRec((char *)&attrcatRec, rid))
+   if ((rc = fh.InsertRec((char *)&attrcatRec, rid)))
       goto err_close;
 
    SM_SetAttrcatRec(attrcatRec, 
                     ATTRCAT, "indexNo", OFFSET(SM_AttrcatRec, indexNo),
                     INT, sizeof(int), -1);
 
-   if (rc = fh.InsertRec((char *)&attrcatRec, rid))
+   if ((rc = fh.InsertRec((char *)&attrcatRec, rid)))
       goto err_close;
 
-   if (rc = rmm.CloseFile(fh))
+   if ((rc = rmm.CloseFile(fh)))
       goto err_return;
  
    // Return ok
@@ -181,7 +187,7 @@ int main(int argc, char *argv[])
    //               DBname cannot contain ' ' or '/' 
    if (strlen(dbname) > MAXDBNAME
        || strchr(dbname, ' ') || strchr(dbname, '/')) {
-     SM_PrintError(SM_INVALIDDBNAME);
+      SM_PrintError(SM_INVALIDDBNAME);
       goto err_exit;
    }
 
@@ -196,13 +202,13 @@ int main(int argc, char *argv[])
    }
 
    // Create the relation catalog
-   if (rc = createRelcat()) {
+   if ((rc = createRelcat())) {
       PrintError(rc);
       goto err_rm;
    }
 
    // Create the attributes catalog
-   if (rc = createAttrcat()) {
+   if ((rc = createAttrcat())) {
       PrintError(rc);
       goto err_rm;
    }
@@ -217,4 +223,3 @@ err_rm:
 err_exit:
    return (1);
 }
-

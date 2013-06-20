@@ -1,5 +1,86 @@
-SM layer test sequence
+QL layer test sequence
 running test # 1 ****************
-Bye.
+
+REDBASE >> ls
+attrcat
+relcat
+
+REDBASE >> create table student (no = i, name = c20, dept = c4, GPA = f, comment = c3);
+
+REDBASE >> load student("../student.data");
+
+REDBASE >> ls
+attrcat
+relcat
+student
+
+REDBASE >> print student;
+no          name                dept GPA         comment 
+---------------------------------------------------------
+1           Adams               MSCS 3.450000    foo     
+2           Bennett             MSAI 4.000000    foo     
+3           Cagney              MSCS 3.250000    foo     
+4           Downer              MSAI 3.950000    foo     
+5           Everett             MSCS 2.950000    foo     
+6           Forest              MSAI 3.840000    foo     
+7           Grover              MSCS 3.200000    foo     
+8           Harrison            MSAI 3.900000    foo     
+9           Iolanthe            MSCS 2.750000    foo     
+10          Jordan              MSAI 3.850000    foo     
+11          Kilroy              MSCS 3.000000    foo     
+12          Lambeth             MSAI 4.000000    foo     
+13          MacBeth             MSCS 2.500000    foo     
+14          Noorda              MSAI 3.900000    foo     
+15          Othello             MSCS 3.300000    foo     
+
+15 tuple(s).
+
+REDBASE >> select  *
+ from  student
+;
+Select
+   nSelAttrs = 1
+   selAttrs[0]:NULL.*
+   nRelations = 1
+   relations[0] student
+   nCondtions = 0
+
+REDBASE >> Bye.
+running test # insert ****************
+
+REDBASE >> ls
+attrcat
+relcat
+
+REDBASE >> create table major (majorid = c6, name = c50, deptid = c5);
+
+REDBASE >> insert into major values (  "PhdCS", "ABC", "MATH");
+Insert
+   relName = major
+   nValues = 3
+   values[0]:AttrType: STRING (char *)data=PhdCS
+   values[1]:AttrType: STRING (char *)data=ABC
+   values[2]:AttrType: STRING (char *)data=MATH
+
+REDBASE >> ls
+attrcat
+major
+relcat
+
+REDBASE >> print major;
+majorid name                                              deptid 
+-----------------------------------------------------------------
+PhdCS   ABC                                               MATH   
+
+1 tuple(s).
+
+REDBASE >> Bye.
 running test # tester ****************
-Bye.
+
+REDBASE >> illegal character [#]
+ /bin/csh -f
+
+REDBASE >> illegal character [#]
+syntax error
+
+REDBASE >> Bye.
