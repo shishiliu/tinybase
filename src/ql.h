@@ -16,6 +16,7 @@
 #include "ix.h"
 #include "sm.h"
 
+#include "iterator.h"
 // QL_Manager: query language (DML)
 //
 class QL_Manager {
@@ -47,6 +48,16 @@ public:
         const Condition conditions[]);   // conditions in where clause
 
 private:
+    // Choose between filescan and indexscan for first operation - leaf level of
+    // operator tree
+    // to see if NLIJ is possible, join condition is passed down
+    Iterator* GetLeafIterator(const char *relName,
+                              int nConditions,
+                              const Condition conditions[],
+                              int nJoinConditions = 0,
+                              const Condition jconditions[] = NULL,
+                              int order = 0,
+                              RelAttr* porderAttr = NULL);
     RM_Manager& rmm;
     IX_Manager& ixm;
     SM_Manager& smm;

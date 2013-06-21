@@ -5,11 +5,9 @@
 #ifndef ITERATOR_H
 #define ITERATOR_H
 
-
 #include "redbase.h"
 #include "printer.h"
 #include "rm_rid.h"
-
 
 using namespace std;
 

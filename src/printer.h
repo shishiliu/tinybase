@@ -10,7 +10,11 @@
 
 #include <iostream>
 #include <cstring>
+#include <sstream>
 #include "redbase.h"      // For definition of MAXNAME
+
+#include <assert.h>
+
 
 #define MAXPRINTSTRING  ((2*MAXNAME) + 5)
 //
