@@ -16,7 +16,6 @@
 #include "ix.h"
 #include "sm.h"
 
-//
 // QL_Manager: query language (DML)
 //
 class QL_Manager {
@@ -25,7 +24,7 @@ public:
     ~QL_Manager();                       // Destructor
 
     RC Select  (int nSelAttrs,           // # attrs in select clause
-        const RelAttr selAttrs[],        // attrs in select clause
+        const AggRelAttr selAttrs[],        // attrs in select clause
         int   nRelations,                // # relations in from clause
         const char * const relations[],  // relations in from clause
         int   nConditions,               // # conditions in where clause

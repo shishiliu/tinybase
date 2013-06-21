@@ -8,6 +8,7 @@
 
 #include <cstdio>
 #include <iostream>
+#include <algorithm>
 #include <sys/times.h>
 #include <sys/types.h>
 #include <cassert>
@@ -20,7 +21,14 @@
 //
 #include "printer.h"
 using namespace std;
+bool strlt(char* i, char* j) {
+        return (strcmp(i, j) < 0);
+}
 
+bool streq(char* i, char* j) {
+        return (strcmp(i, j) == 0);
+}
+//
 //
 // QL_Manager::QL_Manager(SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm)
 //
@@ -44,11 +52,46 @@ QL_Manager::~QL_Manager()
 //
 // Handle the select clause
 //
-RC QL_Manager::Select(int nSelAttrs, const RelAttr selAttrs[],
+RC QL_Manager::Select(int nSelAttrs, const AggRelAttr  selAttrs[],
                       int nRelations, const char * const relations[],
                       int nConditions, const Condition conditions[])
 {
-    int i;
+	 int i;
+	        RelAttr* mSelAttrs = new RelAttr[nSelAttrs];
+	        for (i = 0; i < nSelAttrs; i++) {
+	                mSelAttrs[i].relName = selAttrs[i].relName;
+	                mSelAttrs[i].attrName = selAttrs[i].attrName;
+	        }
+	        AggRelAttr* mSelAggAttrs = new AggRelAttr[nSelAttrs];
+	        for (i = 0; i < nSelAttrs; i++) {
+	                mSelAggAttrs[i].func = selAttrs[i].func;
+	                mSelAggAttrs[i].relName = selAttrs[i].relName;
+	                mSelAggAttrs[i].attrName = selAttrs[i].attrName;
+	        }
+	        char** mRelations = new char*[nRelations];
+	        for (i = 0; i < nRelations; i++) {
+	                mRelations[i] = strdup(relations[i]);
+	        }
+	        Condition * mConditions = new Condition[nConditions];
+	        for (i = 0; i < nConditions; i++) {
+	                mConditions[i] = conditions[i];
+	        }
+	        ////need to check the variabilty of the query here later
+	        sort(mRelations, mRelations+nRelations, strlt);
+
+	        char ** dup = adjacent_find(mRelations, mRelations+nRelations, streq);
+
+	        if(dup!=(mRelations + nRelations)) return QL_DUPREL;
+	        
+	        bool selectStar = false;
+	        if(nSelAttrs == 1 &&  strcmp(mSelAttrs[0].attrName,"*")==0){
+	                selectStar = true;
+	                //nSelAttrs = 0;
+	                for(int i = 0;i<nRelations;i++){
+	                        int  a;
+	                }
+	                
+	        }
 
     cout << "Select\n";
 
