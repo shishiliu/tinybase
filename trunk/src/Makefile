@@ -28,7 +28,7 @@ CFLAGS         = -m32 -g -Wall -std=gnu++0x $(STATS_OPTION) $(INC_DIRS)
 # The STATS_OPTION can be set to -DPF_STATS or to nothing to turn on and
 # off buffer manager statistics.  The student should not modify this
 # flag at all!
-STATS_OPTION   = -DPF_STATS
+STATS_OPTION   = -DPF_STATS -DPC
 
 #
 # Students: Please modify SOURCES variables as needed.
