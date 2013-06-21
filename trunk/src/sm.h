@@ -12,7 +12,6 @@
 #include <string.h>
 #include "redbase.h"  // Please don't change these lines
 #include "parser.h"
-#include "printer.h"
 #include "rm.h"
 #include "ix.h"
 //
@@ -22,6 +21,9 @@
 //
 class SM_Manager {
     friend class QL_Manager;
+    friend class Iterator;
+    friend class FileScan;
+    friend class IndexScan;
 public:
     SM_Manager    (IX_Manager &ixm, RM_Manager &rmm);
     ~SM_Manager   ();                             // Destructor
@@ -47,6 +49,7 @@ public:
 
     RC Set        (const char *paramName,         // set parameter to
                    const char *value);            //   value
+
 private:
     // Copy constructor
     SM_Manager(const SM_Manager &manager);
@@ -100,6 +103,7 @@ void SM_PrintError(RC rc);
 
 #define SM_NOMEM           (START_SM_ERR - 0)  // no memory
 #define SM_BADTABLE        (START_SM_ERR - 1)  // bad table
-#define SM_LASTERROR       SM_BADTABLE
+#define SM_NOSUCHTABLE     (START_SM_ERR - 2)  // a wrong table
+#define SM_LASTERROR       SM_NOSUCHTABLE
 
 #endif

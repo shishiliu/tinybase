@@ -6,7 +6,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <iostream>
-#include <ql_internal.h>
+#include "ql_internal.h"
 using namespace std;
 
 //
