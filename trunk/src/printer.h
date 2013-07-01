@@ -31,7 +31,7 @@ struct DataAttrInfo
        memset(relName, 0, MAXNAME + 1);
        memset(attrName, 0, MAXNAME + 1);
        offset = -1;
-       func = NO_F;
+  //     func = NO_F;
     };
 
     // Copy constructor
@@ -42,7 +42,7 @@ struct DataAttrInfo
        attrType = d.attrType;
        attrLength = d.attrLength;
        indexNo = d.indexNo;
-       func = NO_F;
+//       func = NO_F;
     };
 
     DataAttrInfo& operator=(const DataAttrInfo &d) {
@@ -63,7 +63,7 @@ struct DataAttrInfo
     AttrType attrType;              // Type of attribute
     int      attrLength;            // Length of attribute
     int      indexNo;               // Index number of attribute
-    AggFun func; //Aggregate function on attributes
+//    AggFun func; //Aggregate function on attributes
 };
 
 struct DataRelInfo

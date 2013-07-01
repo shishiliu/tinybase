@@ -30,8 +30,7 @@ static char *SM_WarnMsg[] = {
 };
 
 static char *SM_ErrorMsg[] = {
-  (char*)"no memory",
-  (char*) "bad table"
+  (char*)"no memory"
 };
 
 // 

@@ -41,8 +41,6 @@ extern QL_Manager *pQlm;
 /*
  * local functions
  */
-static int mk_agg_rel_attrs(NODE *list, int max, AggRelAttr relAttrs[]);
-static void mk_agg_rel_attr(NODE *node, AggRelAttr &relAttr);
 static int mk_attr_infos(NODE *list, int max, AttrInfo attrInfos[]);
 static int parse_format_string(char *format_string, AttrType *type, int *len);
 static int mk_rel_attrs(NODE *list, int max, RelAttr relAttrs[]);
@@ -147,14 +145,14 @@ RC interp(NODE *n)
       case N_QUERY:            /* for Query() */
          {
             int       nSelAttrs = 0;
-            AggRelAttr  relAttrs[MAXATTRS];
+            RelAttr  relAttrs[MAXATTRS];
             int       nRelations = 0;
             char      *relations[MAXATTRS];
             int       nConditions = 0;
             Condition conditions[MAXATTRS];
 
             /* Make a list of RelAttrs suitable for sending to Query */
-            nSelAttrs = mk_agg_rel_attrs(n->u.QUERY.relattrlist, MAXATTRS,
+            nSelAttrs = mk_rel_attrs(n->u.QUERY.relattrlist, MAXATTRS,
                   relAttrs);
             if(nSelAttrs < 0){
                print_error((char*)"select", nSelAttrs);
@@ -266,37 +264,6 @@ RC interp(NODE *n)
    return (errval);
 }
 
-static void mk_agg_rel_attr(NODE *node, AggRelAttr &relAttr)
-{
-   relAttr.func = node->u.AGGRELATTR.func;
-   relAttr.relName = node->u.AGGRELATTR.relname;
-   relAttr.attrName = node->u.AGGRELATTR.attrname;
-}
-
-/*
- * mk_attr_rel_infos: converts a list of attribute descriptors (attribute names,
- * types, and lengths) to an array of AttrInfo's so it can be sent to
- * Create.
- *
- * Returns:
- *    length of the list on success ( >= 0 )
- *    error code otherwise
- */
-static int mk_agg_rel_attrs(NODE *list, int max, AggRelAttr relAttrs[])
-{
-   int i;
-
-   /* For each element of the list... */
-   for(i = 0; list != NULL; ++i, list = list -> u.LIST.next){
-      /* If the list is too long then error */
-      if(i == max)
-         return E_TOOMANY;
-
-      mk_agg_rel_attr(list->u.LIST.curr, relAttrs[i]);
-   }
-
-   return i;
-}
 /*
  * mk_attr_infos: converts a list of attribute descriptors (attribute names,
  * types, and lengths) to an array of AttrInfo's so it can be sent to

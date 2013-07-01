@@ -6,8 +6,8 @@
 // functions that will be used by both the SM and QL components.
 
 #include <cstdio>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 #include "printer.h"
 
 using namespace std;
@@ -55,7 +55,7 @@ Printer::Printer(const DataAttrInfo *attributes_, const int attrCount_)
     // this line broke when using CC
     // changing to use malloc and free instead of new and delete
     // psHeader = (char **) new (char *)[attrCount];
-    psHeader = (char**)malloc(attrCount * sizeof(char*));
+    psHeader = (char**)std::malloc(attrCount * sizeof(char*));
 
     // Also figure out the number of spaces between each attribute
     spaces = new int[attrCount];
@@ -110,7 +110,7 @@ Printer::~Printer()
 
     delete [] spaces;
     //delete [] psHeader;
-    free (psHeader);
+    std::free (psHeader);
     delete [] attributes;
 }
 

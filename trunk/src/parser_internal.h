@@ -153,12 +153,7 @@ typedef struct node{
          char *relname;
          char *attrname;
       } RELATTR;
-      /* agg func + relation attribute node */
-          struct{
-             AggFun func;
-             char *relname;
-             char *attrname;
-          } AGGRELATTR;
+
       /* condition node */
       struct{
          struct node *lhsRelattr;

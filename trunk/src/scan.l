@@ -10,6 +10,7 @@
  */
 
 #include <string.h>
+#include <stdio.h>
 #include "redbase.h"          /* parse.h needs the definition of real */
 #include "parser_internal.h"  /* y.tab.h needs the definition of NODE */
 #include "y.tab.h"

@@ -14,21 +14,24 @@
 #include <cassert>
 #include <unistd.h>
 #include "redbase.h"
-#include "ql.h"
 #include "sm.h"
 #include "ix.h"
 #include "rm.h"
 //
+#include "ql_internal.h"
 #include "printer.h"
 #include "iterator.h"
 #include <map>
 using namespace std;
-bool strlt(char* i, char* j) {
-        return (strcmp(i, j) < 0);
-}
 
-bool streq(char* i, char* j) {
+namespace{
+    bool strlt(char* i, char* j) {
+        return (strcmp(i, j) < 0);
+    }
+
+    bool streq(char* i, char* j) {
         return (strcmp(i, j) == 0);
+    }
 }
 //
 //
@@ -54,61 +57,176 @@ QL_Manager::~QL_Manager()
 //
 // Handle the select clause
 //
-RC QL_Manager::Select(int nSelAttrs, const AggRelAttr  selAttrs[],
-                      int nRelations, const char * const relations[],
-                      int nConditions, const Condition conditions[])
+RC QL_Manager::Select(int nSelAttrs, const RelAttr  selAttrs_[],
+                      int nRelations, const char * const relations_[],
+                      int nConditions, const Condition conditions_[])
 {
-	 int i;
-	        RelAttr* mSelAttrs = new RelAttr[nSelAttrs];
-	        for (i = 0; i < nSelAttrs; i++) {
-	                mSelAttrs[i].relName = selAttrs[i].relName;
-	                mSelAttrs[i].attrName = selAttrs[i].attrName;
-	        }
-	        AggRelAttr* mSelAggAttrs = new AggRelAttr[nSelAttrs];
-	        for (i = 0; i < nSelAttrs; i++) {
-	                mSelAggAttrs[i].func = selAttrs[i].func;
-	                mSelAggAttrs[i].relName = selAttrs[i].relName;
-	                mSelAggAttrs[i].attrName = selAttrs[i].attrName;
-	        }
-	        char** mRelations = new char*[nRelations];
-	        for (i = 0; i < nRelations; i++) {
-	                mRelations[i] = strdup(relations[i]);
-	        }
-	        Condition * mConditions = new Condition[nConditions];
-	        for (i = 0; i < nConditions; i++) {
-	                mConditions[i] = conditions[i];
-	        }
-	        ////need to check the variabilty of the query here later
-	        sort(mRelations, mRelations+nRelations, strlt);
-
-	        char ** dup = adjacent_find(mRelations, mRelations+nRelations, streq);
-
-	        if(dup!=(mRelations + nRelations)) return QL_DUPREL;
-	        
-	        bool selectStar = false;
-	        if(nSelAttrs == 1 &&  strcmp(mSelAttrs[0].attrName,"*")==0){
-	                selectStar = true;
-	                //nSelAttrs = 0;
-	                for(int i = 0;i<nRelations;i++){
-	                        int  a;
-	                }
-	                
-	        }
+    int i;
 
     cout << "Select\n";
 
     cout << "   nSelAttrs = " << nSelAttrs << "\n";
     for (i = 0; i < nSelAttrs; i++)
-        cout << "   selAttrs[" << i << "]:" << selAttrs[i] << "\n";
+        cout << "   selAttrs[" << i << "]:" << selAttrs_[i] << "\n";
 
     cout << "   nRelations = " << nRelations << "\n";
     for (i = 0; i < nRelations; i++)
-        cout << "   relations[" << i << "] " << relations[i] << "\n";
+        cout << "   relations[" << i << "] " << relations_[i] << "\n";
 
     cout << "   nCondtions = " << nConditions << "\n";
     for (i = 0; i < nConditions; i++)
-        cout << "   conditions[" << i << "]:" << conditions[i] << "\n";
+        cout << "   conditions[" << i << "]:" << conditions_[i] << "\n";
+///////////////////////////////////////////////////////////////////////////////////
+    char** relations = new char*[nRelations];
+    for (i = 0; i < nRelations; i++) {
+      // strncpy(relations[i], relations_[i], MAXNAME);
+      relations[i] = strdup(relations_[i]);
+    }
 
+    Condition* conditions = new Condition[nConditions];
+    for (i = 0; i < nConditions; i++) {
+      conditions[i] = conditions_[i];
+    }
+
+    sort(relations,
+         relations + nRelations,
+         strlt);
+
+    char** dup = adjacent_find(relations,
+                               relations + nRelations,
+                               streq);
+    if(dup != (relations + nRelations))
+      return QL_DUPREL;
+
+    // copies for rewrite
+    RelAttr* selAttrs = new RelAttr[nSelAttrs];
+    for (i = 0; i < nSelAttrs; i++) {
+      selAttrs[i].relName = selAttrs_[i].relName;
+      selAttrs[i].attrName = selAttrs_[i].attrName;
+    }
+
+    // rewrite select *
+    bool SELECTSTAR = false;
+    if(nSelAttrs == 1 && strcmp(selAttrs[0].attrName, "*") == 0) {
+
+      cout<<"rewrite select *"<<endl;
+
+      SELECTSTAR = true;
+      nSelAttrs = 0;
+      for (int i = 0; i < nRelations; i++) {
+        int ac;
+        DataAttrInfo * aa;
+        RC rc = smm.GetFromTable(relations[i], ac, aa);
+        if (rc != 0) return rc;
+        nSelAttrs += ac;
+        delete [] aa;
+      }
+
+      delete [] selAttrs;
+      selAttrs = new RelAttr[nSelAttrs];
+
+      int j = 0;
+      for (int i = 0; i < nRelations; i++) {
+        int ac;
+        DataAttrInfo * aa;
+        RC rc = smm.GetFromTable(relations[i], ac, aa);
+        if (rc != 0) return rc;
+        for (int k = 0; k < ac; k++) {
+          selAttrs[j].attrName = strdup(aa[k].attrName);
+          selAttrs[j].relName = relations[i];
+          j++;
+        }
+        delete [] aa;
+      }
+    } // if rewrite select "*"
+
+    cout<<"rewrite select *,nSelect = "<<nSelAttrs<<endl;
+    for (int i = 0; i < nSelAttrs; i++) {
+        cout<<"rewrite select *,attr i:"<<selAttrs[i].attrName<<endl;
+    }
+
+///////////////////////////////////////////////////////////////////////////////////
+    // ensure that all relations mentioned in conditions are in the from clause
+    for (int i = 0; i < nConditions; i++) {
+      bool lfound = false;
+
+      for (int j = 0; j < nRelations; j++) {
+          if(conditions[i].lhsAttr.relName == NULL)
+          {
+            return QL_MISSRELATION;
+          }
+
+          if(strcmp(conditions[i].lhsAttr.relName, relations[j]) == 0) {
+            lfound = true;
+            break;
+        }
+      }
+      cout<<"1. hello!!!!"<<endl;
+
+      if(!lfound)
+        return QL_RELMISSINGFROMFROM;
+
+      cout<<"2. hello!!!!"<<endl;
+
+      if(conditions[i].bRhsIsAttr == TRUE)
+      {
+        bool rfound = false;
+        for (int j = 0; j < nRelations; j++) {
+          if(strcmp(conditions[i].rhsAttr.relName, relations[j]) == 0) {
+            rfound = true;
+            break;
+          }
+        }
+
+      cout<<"3. hello!!!!"<<endl;
+
+      if(!rfound)
+          return QL_RELMISSINGFROMFROM;
+      }
+    }
+
+    Iterator* it = NULL;
+
+    if(nRelations == 1) {
+      int order = 0;//useless here, just for the orderby in future
+      bool group = false;
+      RelAttr* orderAttr = NULL;//useless here
+      RelAttr* groupAttr = NULL;
+
+      cout<<"1.rel name="<<relations[0]<<endl;
+      cout<<"1.nCondition="<<nConditions<<endl;
+      cout<<"1.condition="<<conditions<<endl;
+
+      it = GetLeafIterator(relations[0], nConditions, conditions, 0, NULL, order, orderAttr);
+
+      cout<<"get leafiterator success...next step..."<<endl;
+
+      if(it!=NULL){
+
+//          RC QL_Manager::MakeRootIterator(Iterator*& newit,
+//                                          int nSelAttrs, const RelAttr selAttrs[],
+//                                          int nRelations, const char * const relations[],
+//                                          int order, RelAttr orderAttr,
+//                                          bool group, RelAttr groupAttr)
+
+          RC rc = MakeRootIterator(it,
+                                   nSelAttrs, selAttrs,
+                                   nRelations, relations);
+//          RC rc = MakeRootIterator(it, nSelAttrs, selAttrs,
+//                                   nRelations, relations,
+//                                   order, *orderAttr,
+//                                   group, *groupAttr);
+      if(rc != 0)
+          return rc;
+
+      rc = PrintIterator(it);
+      if(rc != 0) return rc;
+      }
+    }
+
+    if(it!=NULL)
+        delete it;
+////////////////////////////////////////////////////////////////////
     return 0;
 }
 
@@ -192,64 +310,68 @@ err_delteattributes:
 //
 // Delete from the relName all tuples that satisfy conditions
 //
-RC QL_Manager::Delete(const char *relName,
-                      int nConditions, const Condition conditions[])
+RC QL_Manager::Delete(const char *relName_,
+                      int nConditions, const Condition conditions_[])
 {
     RC rc;
     int i;
 
     cout << "Delete\n";
-    cout << "   relName = " << relName << "\n";
+    cout << "   relName = " << relName_ << "\n";
     cout << "   nCondtions = " << nConditions << "\n";
     for (i = 0; i < nConditions; i++)
-        cout << "   conditions[" << i << "]:" << conditions[i] << "\n";
-//
-    char _relName[MAXNAME];
-    memset(_relName, '\0', sizeof(_relName));
-    strncpy(_relName, relName, MAXNAME);
+        cout << "   conditions[" << i << "]:" << conditions_[i] << "\n";
+
+    char relName[MAXNAME];
+    strncpy(relName, relName_, MAXNAME);
+
+    Condition* conditions = new Condition[nConditions];
+    for (int i = 0; i < nConditions; i++) {
+      conditions[i] = conditions_[i];
+    }
 
     for (int i = 0; i < nConditions; i++) {
-//      if(conditions[i].lhsAttr.relName == NULL) {
-//        conditions[i].lhsAttr.relName = _relName;
-//      }
-      if(strcmp(conditions[i].lhsAttr.relName, _relName) != 0) {
+      if(conditions[i].lhsAttr.relName == NULL) {
+        conditions[i].lhsAttr.relName = relName;
+      }
+      if(strcmp(conditions[i].lhsAttr.relName, relName) != 0) {
         delete [] conditions;
         return QL_BADATTR;
       }
 
       if(conditions[i].bRhsIsAttr == TRUE) {
-//        if(conditions[i].rhsAttr.relName == NULL) {
-//          conditions[i].rhsAttr.relName = _relName;
-//        }
-        if(strcmp(conditions[i].rhsAttr.relName, _relName) != 0) {
+        if(conditions[i].rhsAttr.relName == NULL) {
+          conditions[i].rhsAttr.relName = relName;
+        }
+        if(strcmp(conditions[i].rhsAttr.relName, relName) != 0) {
           delete [] conditions;
           return QL_BADATTR;
         }
       }
     }
 
-    Iterator* it = GetLeafIterator(_relName, nConditions, conditions);
+    Iterator* it = GetLeafIterator(relName, nConditions, conditions);
 
-    if(bQueryPlans == TRUE)
-      cout << "\n" << it->Explain() << "\n";
+//    if(bQueryPlans == TRUE)
+//      cout << "\n" << it->Explain() << "\n";
 
     Tuple t = it->GetTuple();
-    rc = it->Open();
-    if (rc != 0) return rc;
+    if((rc = it->Open()))
+        return rc;
 
     RM_FileHandle fh;
-    rc =	rmm.OpenFile(_relName, fh);
-    if (rc != 0) return rc;
+    if((rc = rmm.OpenFile(relName, fh)))
+        return rc;
 
     int attrCount = -1;
     DataAttrInfo * attributes;
-    rc = smm.GetFromTable(_relName, attrCount, attributes);
+    rc = smm.GetFromTable(relName, attrCount, attributes);
 
     if(rc != 0) return rc;
     IX_IndexHandle * indexes = new IX_IndexHandle[attrCount];
     for (int i = 0; i < attrCount; i++) {
       if(attributes[i].indexNo != -1) {
-        ixm.OpenIndex(_relName, attributes[i].indexNo, indexes[i]);
+        ixm.OpenIndex(relName, attributes[i].indexNo, indexes[i]);
       }
     }
 
@@ -289,8 +411,8 @@ RC QL_Manager::Delete(const char *relName,
     if (rc != 0)
         return rc;
 
-    //delete it;
-    //cerr << "done with delete it" << endl;
+    delete it;
+    cerr << "done with delete it" << endl;
     return 0;
 }
 
@@ -325,17 +447,19 @@ RC QL_Manager::Update(const char *relName,
 
 
 //
-// Choose between filescan and indexscan for first operation - leaf level of
-// operator tree
+// Choose between filescan and indexscan for first operation
+//- leaf level of operator tree
 // REturned iterator should be deleted by user after use.
 Iterator* QL_Manager::GetLeafIterator(const char *relName,
                                       int nConditions,
                                       const Condition conditions[],
+
                                       int nJoinConditions,
                                       const Condition jconditions[],
                                       int order,
                                       RelAttr* porderAttr)
 {
+
   if(relName == NULL) {
     return NULL;
   }
@@ -347,14 +471,15 @@ Iterator* QL_Manager::GetLeafIterator(const char *relName,
 
   int nIndexes = 0;
   char* chosenIndex = NULL;
-  const Condition * chosenCond = NULL;
+
   Condition * filters = NULL;
   int nFilters = -1;
-  Condition jBased = NULLCONDITION;
 
+  const Condition * chosenCond = NULL;
+  Condition* jBased = NULL;
   map<string, const Condition*> jkeys;
 
-  // cerr << relName << " nJoinConditions was " << nJoinConditions << endl;
+  //cerr << relName << " nJoinConditions was " << nJoinConditions << endl;
 
   for(int j = 0; j < nJoinConditions; j++) {
     if(strcmp(jconditions[j].lhsAttr.relName, relName) == 0) {
@@ -367,62 +492,72 @@ Iterator* QL_Manager::GetLeafIterator(const char *relName,
     }
   }
 
-  for(map<string, const Condition*>::iterator it = jkeys.begin(); it != jkeys.end(); it++) {
+  for(map<string, const Condition*>::iterator itJkeys = jkeys.begin(); itJkeys != jkeys.end(); itJkeys++) {
     // Pick last numerical index or at least one non-numeric index
     for (int i = 0; i < attrCount; i++) {
       if(attributes[i].indexNo != -1 &&
-         strcmp(it->first.c_str(), attributes[i].attrName) == 0) {
+         strcmp(itJkeys->first.c_str(), attributes[i].attrName) == 0)
+      {
         nIndexes++;
+        //just creat index for int||float attributes
         if(chosenIndex == NULL ||
-           attributes[i].attrType == INT || attributes[i].attrType == FLOAT) {
+           attributes[i].attrType == INT ||
+           attributes[i].attrType == FLOAT)
+        {
           chosenIndex = attributes[i].attrName;
-          jBased = *(it->second);
-          jBased.lhsAttr.attrName = chosenIndex;
-          jBased.bRhsIsAttr = FALSE;
-          jBased.rhsValue.type = attributes[i].attrType;
-          jBased.rhsValue.data = NULL;
+          jBased = (Condition*&)itJkeys->second;
+          jBased->lhsAttr.attrName = chosenIndex;
+          jBased->bRhsIsAttr = FALSE;
+          jBased->rhsValue.type = attributes[i].attrType;
+          jBased->rhsValue.data = NULL;
 
-          chosenCond = &jBased;
-
-          // cerr << "chose index for iscan based on join condition " <<
-          //   *(chosenCond) << endl;
+          chosenCond = jBased;
+          cerr << "chose index for iscan based on join condition "
+               << *(chosenCond) << endl;
         }
       }
     }
   }
-
   // if join conds resulted in chosenCond
   if(chosenCond != NULL) {
     nFilters = nConditions;
     filters = new Condition[nFilters];
     for(int j = 0; j < nConditions; j++) {
-      if(chosenCond != &(conditions[j])) {
+      if(chosenCond != &(conditions[j]))
+      {
         filters[j] = conditions[j];
       }
     }
-  } else {
+  }
+  //else: no join conds
+  else {
     // (chosenCond == NULL) // prefer join cond based index
     map<string, const Condition*> keys;
 
     for(int j = 0; j < nConditions; j++) {
-      if(strcmp(conditions[j].lhsAttr.relName, relName) == 0) {
+      if(strcmp(conditions[j].lhsAttr.relName, relName) == 0)
+      {
         keys[string(conditions[j].lhsAttr.attrName)] = &conditions[j];
       }
 
       if(conditions[j].bRhsIsAttr == TRUE &&
-         strcmp(conditions[j].rhsAttr.relName, relName) == 0) {
+         strcmp(conditions[j].rhsAttr.relName, relName) == 0)
+      {
         keys[string(conditions[j].rhsAttr.attrName)] = &conditions[j];
       }
     }
 
-    for(map<string, const Condition*>::iterator it = keys.begin(); it != keys.end(); it++) {
-      // Pick last numerical index or at least one non-numeric index
+    // Pick last numerical index or at least one non-numeric index
+    for(map<string, const Condition*>::iterator it = keys.begin(); it != keys.end(); it++)
+    {      
       for (int i = 0; i < attrCount; i++) {
         if(attributes[i].indexNo != -1 &&
            strcmp(it->first.c_str(), attributes[i].attrName) == 0) {
           nIndexes++;
           if(chosenIndex == NULL ||
-             attributes[i].attrType == INT || attributes[i].attrType == FLOAT) {
+             attributes[i].attrType == INT ||
+             attributes[i].attrType == FLOAT)
+          {
             chosenIndex = attributes[i].attrName;
             chosenCond = it->second;
           }
@@ -430,7 +565,7 @@ Iterator* QL_Manager::GetLeafIterator(const char *relName,
       }
     }
 
-    if(chosenCond == NULL) {
+    if(chosenCond == NULL) {        
       nFilters = nConditions;
       filters = new Condition[nFilters];
       for(int j = 0; j < nConditions; j++) {
@@ -450,19 +585,29 @@ Iterator* QL_Manager::GetLeafIterator(const char *relName,
     }
   }
 
+  Iterator* it = NULL;
+
+  //use a file scan
   if(chosenCond == NULL && (nConditions == 0 || nIndexes == 0)) {
-    Condition cond = NULLCONDITION;
+    cerr<<"use a file scan"<<endl;
+    Condition* cond = NULL;
+    it = new FileScan(smm,rmm,relName);
 
-    RC status = -1;
-    Iterator* it = NULL;
     if(nConditions == 0)
-      it = new FileScan(smm, rmm, relName, status, cond);
+    {
+        rc = it->CreateScan(cond);
+    }
     else
-      it = new FileScan(smm, rmm, relName, status, cond, nConditions,
-                        conditions);
-
-    if(status != 0) {
-      PrintErrorAll(status);
+    {
+        //cout<<"3.condition="<< *conditions<<endl;
+        cond = new Condition();
+        *cond= conditions[0];
+        rc = it->CreateScan(cond,
+                            nConditions,
+                            conditions);
+    }
+    if(rc != 0) {
+      QL_PrintError(rc);
       return NULL;
     }
     delete [] filters;
@@ -470,9 +615,10 @@ Iterator* QL_Manager::GetLeafIterator(const char *relName,
     return it;
   }
 
-  // use an index scan
-  RC status = -1;
-  Iterator* it;
+  // else:use an index scan
+  cerr<<"use an index scan"<<endl;
+  rc = -1;
+  it = NULL;
 
   bool desc = false;
   if(order != 0 &&
@@ -487,15 +633,16 @@ Iterator* QL_Manager::GetLeafIterator(const char *relName,
       if(order == 0) // use only if there is no order-by
         desc = true; // more optimal
 
-    it = new IndexScan(smm, rmm, ixm, relName, chosenIndex, status,
+    it = new IndexScan(smm, rmm, ixm, relName, chosenIndex, rc,
                        *chosenCond, nFilters, filters, desc);
   }
   else // non-conditional index scan
-    it = new IndexScan(smm, rmm, ixm, relName, chosenIndex, status,
-                       NULLCONDITION, nFilters, filters, desc);
+    it = new IndexScan(smm, rmm, ixm, relName, chosenIndex, rc,
+                       *chosenCond, nFilters, filters, desc);
 
-  if(status != 0) {
-    PrintErrorAll(status);
+  if(rc != 0)
+  {
+    QL_PrintError(rc);
     return NULL;
   }
 
@@ -503,3 +650,75 @@ Iterator* QL_Manager::GetLeafIterator(const char *relName,
   delete [] attributes;
   return it;
 }
+
+////////////////////////////////////////////////////////////////////////////
+RC QL_Manager::MakeRootIterator(Iterator*& newit,
+                                int nSelAttrs, const RelAttr selAttrs_[],
+                                int nRelations, const char * const relations[])
+{
+
+    RelAttr* selAttrs = new RelAttr[nSelAttrs];
+    for (int i = 0; i < nSelAttrs; i++) {
+      if(selAttrs_[i].relName==0){
+            return QL_MISSRELATION;
+      }
+      selAttrs[i].relName = selAttrs_[i].relName;
+      selAttrs[i].attrName = selAttrs_[i].attrName;
+    }
+//    cout<<"nSelAttr:"<<nSelAttrs<<endl;
+//    cout << "newit info"<<newit->GetAttrCount()<<endl;
+
+    newit = new Projection(newit,nSelAttrs,selAttrs);
+    return 0;
+}
+
+RC QL_Manager::MakeRootIterator(Iterator*& newit,
+                                int nSelAttrs, const RelAttr selAttrs[],
+                                int nRelations, const char * const relations[],
+                                int order, RelAttr orderAttr,
+                                bool group, RelAttr groupAttr)
+{
+  //RC rc ;
+  //if((rc = Projection(newit, nSelAttrs, selAttrs)))
+    //return rc;
+  newit = new Projection(newit,nSelAttrs,selAttrs);
+  return 0;
+}
+
+RC QL_Manager::PrintIterator(Iterator* it) const {
+//  if(bQueryPlans == TRUE)
+//    cout << "\n" << it->Explain() << "\n";
+
+  Tuple t = it->GetTuple();
+  RC rc = it->Open();
+  if (rc != 0) return rc;
+
+  int attrCount = t.GetAttrCount();
+  DataAttrInfo* attrs = t.GetAttributes();
+
+  Printer* p = new Printer(attrs,attrCount);
+  p->PrintHeader(cout);
+  while(1) {
+    rc = it->GetNext(t);
+    if(rc ==  it->Eof())
+      break;
+    if (rc != 0) return rc;
+    //cout << "QL_Manager::PrintIterator tuple " << t << endl;
+    const char* data = NULL;
+    t.GetData(data);
+    p->Print(cout, data);
+  }
+  p->PrintFooter(cout);
+
+  rc = it->Close();
+
+  if(p==NULL)
+      delete p;
+  if (rc != 0)
+      return rc;
+  return 0;
+}
+
+
+
+
