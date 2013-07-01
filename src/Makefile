@@ -28,7 +28,7 @@ CFLAGS         = -m32 -g -Wall -std=gnu++0x $(STATS_OPTION) $(INC_DIRS)
 # The STATS_OPTION can be set to -DPF_STATS or to nothing to turn on and
 # off buffer manager statistics.  The student should not modify this
 # flag at all!
-STATS_OPTION   = -DPF_STATS -DPC
+STATS_OPTION   = -DPF_STATS
 
 #
 # Students: Please modify SOURCES variables as needed.
@@ -38,11 +38,11 @@ PF_SOURCES     = pf_buffermgr.cc pf_error.cc pf_filehandle.cc \
                  pf_statistics.cc statistics.cc
 RM_SOURCES     = rm_rid.cc rm_record.cc rm_manager.cc rm_filescan.cc rm_filehandle.cc rm_error.cc
 IX_SOURCES     = ix_manager.cc ix_indexhandle.cc ix_indexscan.cc ix_error.cc ix_btnode.cc
-SM_SOURCES     = sm_error.cc sm_manager.cc sm_stub.cc printer.cc
-QL_SOURCES     = index_scan.cc ql_manager.cc ql_error.cc
+SM_SOURCES     = sm_error.cc sm_manager.cc printer.cc #sm_stub.cc
+QL_SOURCES     = projection.cc file_scan.cc index_scan.cc ql_manager.cc ql_error.cc
 UTILS_SOURCES  = dbcreate.cc dbdestroy.cc redbase.cc
 PARSER_SOURCES = scan.c parse.c nodes.c interp.c
-TESTER_SOURCES = pf_test1.cc pf_test2.cc pf_test3.cc rm_test.cc ix_test.cc parser_test.cc #ix_testTA-1.cc ix_testTA-2.cc parser_test.cc
+TESTER_SOURCES = pf_test1.cc pf_test2.cc pf_test3.cc rm_test.cc ix_test.cc ix_testTA-1.cc ix_testTA-2.cc#parser_test.cc
 
 PF_OBJECTS     = $(addprefix $(BUILD_DIR), $(PF_SOURCES:.cc=.o))
 RM_OBJECTS     = $(addprefix $(BUILD_DIR), $(RM_SOURCES:.cc=.o))

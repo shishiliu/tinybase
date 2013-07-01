@@ -6,6 +6,7 @@
 #define ITERATOR_H
 
 #include "redbase.h"
+#include "parser.h"
 #include "printer.h"
 #include "rm_rid.h"
 
@@ -143,10 +144,17 @@ namespace {
 
 class Iterator {
  public:
- Iterator():bIterOpen(false), indent(""), 
-    bSorted(false), desc(false) {}
+ Iterator():
+     bIterOpen(false),
+     indent(""),
+     bSorted(false),
+     desc(false) {}
   virtual ~Iterator() {}
 
+  virtual RC CreateScan(   const Condition* cond = NULL,
+                           int nOutFilters = 0,
+                           const Condition outFilters[] = NULL
+                       ) {return 0;}
   virtual RC Open() = 0;
   virtual RC GetNext(Tuple &t) = 0;
   virtual RC Close() = 0;
@@ -186,6 +194,7 @@ class Iterator {
   bool bIterOpen;
   DataAttrInfo* attrs;
   int attrCount;
+
   stringstream explain;
   string indent;
   // ordering attributes

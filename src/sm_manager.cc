@@ -1178,7 +1178,7 @@ RC SM_Manager::InsertRecord(const char *relName,
     IX_IndexHandle *ihs = NULL;
     RID rid;
     int i =0;
-
+    void * _data = (void *&)data;
     // Open relation file
     if ((rc = pRmm->OpenFile(relName, fh)))
        goto err_deleteihs;
@@ -1200,7 +1200,7 @@ RC SM_Manager::InsertRecord(const char *relName,
     {
        if (attributes[i].indexNo == -1)
           continue;
-       if ((rc = ihs[i].InsertEntry(data + attributes[i].offset, rid)))
+       if ((rc = ihs[i].InsertEntry(_data + attributes[i].offset, rid)))
           goto err_closeindexes;
     }
     // Close indexes

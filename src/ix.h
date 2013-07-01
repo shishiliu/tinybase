@@ -125,8 +125,8 @@ public:
    ~IX_IndexHandle();
 
    // Insert a new index entry
-   RC InsertEntry(const void *pData, const RID &rid);
-   RC InsertEntry(const void *pData, const RID &rid, int detail);
+   RC InsertEntry(void *pData, const RID &rid);
+   RC InsertEntry(void *pData, const RID &rid, int detail);
 
    // Delete a new index entry
    RC DeleteEntry(void *pData, const RID &rid);

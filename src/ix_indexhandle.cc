@@ -328,7 +328,7 @@ RC IX_IndexHandle::GetThisPage(PageNum p, PF_PageHandle& ph) const {
 // Ret:  RM return code
 //
 
-RC IX_IndexHandle::InsertEntry(const void *pData, const RID &rid) {
+RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid) {
     RC rc;
     int detail = 0;
     rc = InsertEntry(pData, rid, detail);
@@ -338,7 +338,7 @@ RC IX_IndexHandle::InsertEntry(const void *pData, const RID &rid) {
     return rc;
 }
 
-RC IX_IndexHandle::InsertEntry(const void *pData, const RID &rid, int detail) {
+RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid, int detail) {
     RC invalid = IsValid();
     if (invalid) return invalid;
 
@@ -382,7 +382,7 @@ RC IX_IndexHandle::InsertEntry(const void *pData, const RID &rid, int detail) {
 
     int result = node->InsertNode(pData, rid);
     // no room in node - deal with overflow - non-root
-    const void * failedKey = pData;
+    void * failedKey = pData;
     RID failedRid = rid;
 
     while (result == -1) {

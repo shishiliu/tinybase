@@ -1350,8 +1350,21 @@ RC Test1(void)
       if ((rc = indScn.OpenScan(ihOK5, EQ_OP, &value)))
          goto end;
       while ((rc = indScn.GetNextEntry(rid)) == 0) {
+
+          if(value < 70)
+          {
+              jishu++;
+              cout<<"+++++value:"<<value<<" pageNum:"<<rid.Page()<<endl;
+          }
+          else
+          {
+          jishu++;
+          cout<<"+++++value:"<<value<<" pageNum:"<<rid.Page()<<endl;
+          }
+
          if ((rc = ihOK5.DeleteEntry(&value, rid))) goto end;
       }      
+      cout<<"+++++value:"<<value<<"jishu:"<<jishu<<endl;
       if (rc !=  IX_EOF)
           goto end;
       if ((rc = indScn.CloseScan()))

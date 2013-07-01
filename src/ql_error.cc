@@ -17,6 +17,7 @@ const char *QL_WarnMsg[] = {
   (char*)"QL_INVALIDSIZE invalid number of attributes",
   (char*)"key,rid already exists in index",
   (char*)"key,rid combination does not exist in index",
+  (char*)"the relation of the attribute should be specified"
 };
 
 const char *QL_ErrorMsg[] = {

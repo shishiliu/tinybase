@@ -18,14 +18,7 @@ struct AttrInfo{
     AttrType attrType;    /* type of attribute    */
     int      attrLength;  /* length of attribute  */
 };
-struct AggRelAttr{
-    AggFun   func; 
-    char     *relName;    // Relation name (may be NULL)
-    char     *attrName;   // Attribute name
 
-    // Print function
-    friend std::ostream &operator<<(std::ostream &s, const AggRelAttr &ra);
-};
 struct RelAttr{
     char     *relName;    // Relation name (may be NULL)
     char     *attrName;   // Attribute name
