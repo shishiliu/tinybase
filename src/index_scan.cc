@@ -8,239 +8,213 @@
 
 using namespace std;
 
-IndexScan::IndexScan(SM_Manager& smm,
-                     RM_Manager& rmm,
-                     IX_Manager& ixm,
-                     const char* relName_,
-                     const char* indexAttrName, 
-                     RC& status,
-                     const Condition& cond,
-                     int nOutFilters,
-                     const Condition outFilters[],
-                     bool desc)
-  :prmm(&rmm), pixm(&ixm), psmm(&smm),
-   relName(relName_),
-   nOFilters(nOutFilters), oFilters(NULL), attrName(indexAttrName)
-{
-  if(relName_ == NULL || indexAttrName == NULL) {
-    status = SM_NOSUCHTABLE;
-    return;
-  }
+IndexScan::IndexScan(SM_Manager& smm, RM_Manager& rmm, IX_Manager& ixm,
+		const char* relName_, const char* indexAttrName, RC& status,
+		const Condition& cond, int nOutFilters, const Condition outFilters[],
+		bool desc) :
+	prmm(&rmm), pixm(&ixm), psmm(&smm), relName(relName_),
+			nOFilters(nOutFilters), oFilters(NULL), attrName(indexAttrName) {
+	if (relName_ == NULL || indexAttrName == NULL) {
+		status = SM_NOSUCHTABLE;
+		return;
+	}
 
-  ifs = new IX_IndexScan();
-  rmh = new RM_FileHandle();
-  ixh = new IX_IndexHandle();
+	ifs = new IX_IndexScan();
+	rmh = new RM_FileHandle();
+	ixh = new IX_IndexHandle();
 
-  attrCount = -1;
-  attrs = NULL;
-  RC rc = smm.GetFromTable(relName.c_str(), attrCount, attrs);
-  if (rc != 0) { 
-    status = rc;
-    return;
-  }
+	attrCount = -1;
+	attrs = NULL;
+	RC rc = smm.GetFromTable(relName.c_str(), attrCount, attrs);
+	if (rc != 0) {
+		status = rc;
+		return;
+	}
 
-  int indexNo = -2;
-  assert(attrCount > 0);
-  for(int i = 0; i < attrCount; i++) {
-    if(strcmp(attrs[i].attrName, indexAttrName) == 0) {
-      indexNo = attrs[i].indexNo;
-    }
-  }
+	int indexNo = -2;
+	assert(attrCount> 0);
+	for (int i = 0; i < attrCount; i++) {
+		if (strcmp(attrs[i].attrName, indexAttrName) == 0) {
+			indexNo = attrs[i].indexNo;
+		}
+	}
+	bSorted = true;
+	sortRel = string(relName_);
+	sortAttr = string(indexAttrName);
 
-  // has to be a value
-  assert(cond.rhsValue.data == NULL || cond.bRhsIsAttr == FALSE); 
-  // only conditions
-  // on index key can be pushed down.
-  assert(strcmp(cond.lhsAttr.attrName, indexAttrName) == 0 ||
-         strcmp(cond.rhsAttr.attrName, indexAttrName) == 0);
-  assert(strcmp(cond.lhsAttr.relName, relName.c_str()) == 0 ||
-         strcmp(cond.rhsAttr.relName, relName.c_str()) == 0);
+	rc = prmm->OpenFile(relName.c_str(), *rmh);
+	if (rc != 0) {
+		status = rc;
+		return;
+	}
 
-  bSorted = true;
-  sortRel = string(relName_);
-  sortAttr = string(indexAttrName);
+	rc = pixm->OpenIndex(relName.c_str(), indexNo, *ixh);
+	if (rc != 0) {
+		status = rc;
+		return;
+	}
+	this->desc = desc;
+	this->c = cond.op;
+	rc = ReOpenScan(cond.rhsValue.data);
+	if (rc != 0) {
+		status = rc;
+		return;
+	}
 
-  rc = prmm->OpenFile(relName.c_str(), *rmh);
-  if (rc != 0) { 
-    status = rc;
-    return;
-  }
+	oFilters = new Condition[nOFilters];
+	for (int i = 0; i < nOFilters; i++) {
+		oFilters[i] = outFilters[i]; // shallow copy
+	}
 
-  rc = pixm->OpenIndex(relName.c_str(), indexNo, *ixh);
-  if (rc != 0) {
-    status = rc;
-    return;
-  }
+	explain << "IndexScan\n";
+	explain << "   relName = " << relName.c_str() << "\n";
+	explain << "   attrName = " << indexAttrName << " "
+			<< (desc == true ? "DESC" : "ASC");
+	explain << "\n";
+	if (cond.rhsValue.data != NULL)
+		explain << "   ScanCond = " << cond << "\n";
+	if (nOutFilters > 0) {
+		explain << "   nFilters = " << nOutFilters << "\n";
+		for (int i = 0; i < nOutFilters; i++)
+			explain << "   filters[" << i << "]:" << outFilters[i] << "\n";
+	}
 
-  // rc = ifs.OpenScan(ixh, 
-  //                   cond.op,
-  //                   cond.rhsValue.data,
-  //                   NO_HINT,
-  //                   desc);
-  this->desc = desc;
-  this->c = cond.op;
-  rc = ReOpenScan(cond.rhsValue.data);
-  if (rc != 0) { 
-    status = rc;
-    return;
-  }
-
-  oFilters = new Condition[nOFilters];
-  for(int i = 0; i < nOFilters; i++) {
-    oFilters[i] = outFilters[i]; // shallow copy
-  }
-
-  explain << "IndexScan\n";
-  explain << "   relName = " << relName.c_str() << "\n";
-  explain << "   attrName = " << indexAttrName
-          << " " << (desc == true ? "DESC" : "ASC");
-  explain << "\n";
-  if(cond.rhsValue.data != NULL)
-    explain << "   ScanCond = " << cond << "\n";
-  if(nOutFilters > 0) {
-    explain << "   nFilters = " << nOutFilters << "\n";
-    for (int i = 0; i < nOutFilters; i++)
-      explain << "   filters[" << i << "]:" << outFilters[i] << "\n";
-  }
-
-  status = 0;
+	status = 0;
 }
 
 // will close if already open
 // made available for NLIJ to use
 // only value is new, rest of the index attr condition is the same
-RC IndexScan::ReOpenScan(void* newData)
-{
-//  if(ifs.IsOpen())
-//    ifs.CloseScan();
+RC IndexScan::ReOpenScan(void* newData) {
+	//  if(ifs.IsOpen())
+	//    ifs.CloseScan();
 
-  return ifs->OpenScan(*ixh,
-                        c,
-                        newData,
-                        NO_HINT);
+	return ifs->OpenScan(*ixh, c, newData, NO_HINT);
 }
 
-string IndexScan::Explain()
-{
-  return indent + explain.str();
+string IndexScan::Explain() {
+	return indent + explain.str();
 }
 
-RC IndexScan::IsValid()
-{
-  return (attrCount != -1 && attrs != NULL) ? 0 : SM_BADTABLE;
+RC IndexScan::IsValid() {
+	return (attrCount != -1 && attrs != NULL) ? 0 : SM_BADTABLE;
 }
 
-IndexScan::~IndexScan()
-{
-  ifs->CloseScan();
-  pixm->CloseIndex(*ixh);
-  delete ixh;
+IndexScan::~IndexScan() {
+	ifs->CloseScan();
+	pixm->CloseIndex(*ixh);
+	delete ixh;
 
-  if(ifs!=NULL)
-    delete ifs;
+	if (ifs!=NULL)
+		delete ifs;
 
-  prmm->CloseFile(*rmh);
-  delete rmh;
-  delete [] attrs;
-  delete [] oFilters;
+	prmm->CloseFile(*rmh);
+	delete rmh;
+	delete [] attrs;
+	delete [] oFilters;
 }
-
 
 // iterator interface
 // acts as a (re)open after OpenScan has been called.
-RC IndexScan::Open()
-{
-  RC invalid = IsValid(); if(invalid) return invalid;
+RC IndexScan::Open() {
+	RC invalid = IsValid();
+	if (invalid)
+		return invalid;
 
-  if(bIterOpen)
-    return IX_HANDLEOPEN;
-//  if(!ifs.IsOpen())
-//    return IX_FNOTOPEN;
+	if (bIterOpen)
+		return IX_HANDLEOPEN;
+	//  if(!ifs.IsOpen())
+	//    return IX_FNOTOPEN;
 
-  bIterOpen = true;
-  return 0;
+	bIterOpen = true;
+	return 0;
 }
 
 // iterator interface
-RC IndexScan::Close()
-{
-  RC invalid = IsValid(); if(invalid) return invalid;
+RC IndexScan::Close() {
+	RC invalid = IsValid();
+	if (invalid)
+		return invalid;
 
-  if(!bIterOpen)
-    return IX_FNOTOPEN;
-//  if(!ifs.IsOpen())
-//    return IX_FNOTOPEN;
+	if (!bIterOpen)
+		return IX_FNOTOPEN;
+	//  if(!ifs.IsOpen())
+	//    return IX_FNOTOPEN;
 
-  bIterOpen = false;
-  //ifs.ResetState();
-  return 0;
+	bIterOpen = false;
+	//ifs.ResetState();
+	return 0;
 }
 
 // iterator interface
-RC IndexScan::GetNext(Tuple &t)
-{
-  RC invalid = IsValid(); if(invalid) return invalid;
+RC IndexScan::GetNext(Tuple &t) {
+	RC invalid = IsValid();
+	if (invalid)
+		return invalid;
 
-  if(!bIterOpen)
-    return IX_FNOTOPEN;
-//  if(!ifs.IsOpen())
-//    return IX_FNOTOPEN;
-  
-  RID rid;
-  RC rc;
-  bool found = false;
+	if (!bIterOpen)
+		return IX_FNOTOPEN;
+	//  if(!ifs.IsOpen())
+	//    return IX_FNOTOPEN;
 
-  while(!found) {
+	RID rid;
+	RC rc;
+	bool found = false;
 
-    rc = ifs->GetNextEntry(rid);
-    if (rc != 0) return rc;
+	while (!found) {
 
-    RM_Record rec;
-    rc = rmh->GetRec(rid, rec);
-    if (rc != 0 ) return rc;
-    char * buf;
-    rc = rec.GetData(buf);
-    if (rc != 0 ) return rc;
+		rc = ifs->GetNextEntry(rid);
+		if (rc != 0)
+			return rc;
 
-    bool recordIn = true;
-    for (int i = 0; i < nOFilters; i++) {
-      Condition cond = oFilters[i];
-      DataAttrInfo* condAttr;
-      RID r;  
-      //rc = psmm->GetAttrFromCat(relName.c_str(), cond.lhsAttr.attrName, condAttr, r);
+		RM_Record rec;
+		rc = rmh->GetRec(rid, rec);
+		if (rc != 0)
+			return rc;
+		char * buf;
+		rc = rec.GetData(buf);
+		if (rc != 0)
+			return rc;
 
-      RM_Record rec;
-      rc = psmm->GetAttributeInfo(relName.c_str(), cond.lhsAttr.attrName, rec, (char *&)condAttr);
-      if (rc != 0) return rc;
-      rec.GetRid(r);
-      //condAttr = *data;
+		bool recordIn = true;
+		for (int i = 0; i < nOFilters; i++) {
+			Condition cond = oFilters[i];
+			DataAttrInfo* condAttr;
+			RID r;
+			RM_Record rec;
+			rc = psmm->GetAttributeInfo(relName.c_str(), cond.lhsAttr.attrName,
+					rec, (char *&)condAttr);
+			if (rc != 0)
+				return rc;
+			rec.GetRid(r);
+			//condAttr = *data;
 
-      char * rhs = (char*)cond.rhsValue.data;
-      if(cond.bRhsIsAttr == TRUE) {
-        DataAttrInfo rhsAttr;
-        RID r;
-        RM_Record rec;
-        rc = psmm->GetAttributeInfo(relName.c_str(), cond.lhsAttr.attrName, rec, (char *&)rhsAttr);
-        if (rc != 0) return rc;
-        rec.GetRid(r);
-        rhs = (buf + rhsAttr.offset);
-      }
-   
-    }
+			char * rhs = (char*)cond.rhsValue.data;
+			if (cond.bRhsIsAttr == TRUE) {
+				DataAttrInfo rhsAttr;
+				RID r;
+				RM_Record rec;
+				rc = psmm->GetAttributeInfo(relName.c_str(),
+						cond.lhsAttr.attrName, rec, (char *&)rhsAttr);
+				if (rc != 0)
+					return rc;
+				rec.GetRid(r);
+				rhs = (buf + rhsAttr.offset);
+			}
 
-    if(recordIn) {
-      t.Set(buf);
-      t.SetRid(rid);
-      found = true;
-    }
-  } // while
-  return rc;
+		}
+
+		if (recordIn) {
+			t.Set(buf);
+			t.SetRid(rid);
+			found = true;
+		}
+	} // while
+	return rc;
 }
-
-RC IndexScan::CreateScan(
-    const Condition* cond,// = NULLCONDITION,
-    int nOutFilters,// = 0,
-    const Condition outFilters[])// = NULL)
+RC IndexScan::CreateScan(const Condition* cond,// = NULLCONDITION,
+		int nOutFilters,// = 0,
+		const Condition outFilters[])// = NULL)
 {
-    return 0;
+	return 0;
 }

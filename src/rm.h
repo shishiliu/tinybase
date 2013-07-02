@@ -35,7 +35,10 @@ public:
     // Return the data corresponding to the record.  Sets *pData to the
     // record contents.
     RC GetData(char *&pData) const;
-
+    // Sets data in the record for a fixed recordsize of size.
+      // Real object is only available and usable at this point not after
+      // construction
+      RC Set(char *pData2, int size, RID id);
     // Return the RID associated with the record
     RC GetRid (RID &rid) const;
 

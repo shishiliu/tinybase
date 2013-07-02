@@ -37,7 +37,7 @@ public:
     RC CreateIndex(const char *relName,           // create an index for
                    const char *attrName);         //   relName.attrName
     RC DropTable  (const char *relName);          // destroy a relation
-
+     bool IsAttrIndexed(const char* relName, const char* attrName) ;//Is this attr indexed
     RC DropIndex  (const char *relName,           // destroy index on
                    const char *attrName);         //   relName.attrName
     RC Load       (const char *relName,           // load relName from
@@ -49,6 +49,11 @@ public:
 
     RC Set        (const char *paramName,         // set parameter to
                    const char *value);            //   value
+    // temp operations on attrcat to make index appear to be missing
+      RC DropIndexFromAttrCatAlone(const char *relName,
+                                   const char *attrName);
+      RC ResetIndexFromAttrCatAlone(const char *relName,
+                                    const char *attrName);
 
 private:
     // Copy constructor
@@ -104,6 +109,7 @@ void SM_PrintError(RC rc);
 #define SM_NOMEM           (START_SM_ERR - 0)  // no memory
 #define SM_BADTABLE        (START_SM_ERR - 1)  // bad table
 #define SM_NOSUCHTABLE     (START_SM_ERR - 2)  // a wrong table
+#define SM_BADATTR         (START_SM_ERR - 6)
 #define SM_LASTERROR       SM_NOSUCHTABLE
 
 #endif
