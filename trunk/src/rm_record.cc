@@ -70,3 +70,13 @@ RC RM_Record::GetRid(RID &_rid) const
    return (0);
 }
 
+RC RM_Record::Set     (char *pData2, int size, RID rid_)
+{
+	recordSize = size;
+  this->rid = rid_;
+	if (pData == NULL)
+		pData = new char[recordSize];
+  memcpy(pData, pData2, size);
+	return 0;
+}
+

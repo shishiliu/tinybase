@@ -56,7 +56,9 @@ struct DataAttrInfo
        }
        return (*this);
     };
-
+    static unsigned int size() { 
+        return 2*(MAXNAME+1) + sizeof(AttrType) + 3*sizeof(int);
+      }
     char     relName[MAXNAME+1];    // Relation name
     char     attrName[MAXNAME+1];   // Attribute name
     int      offset;                // Offset of attribute
@@ -129,6 +131,7 @@ public:
     // Constructor.  Takes as arguments an array of attributes along with
     // the length of the array.
     Printer(const DataAttrInfo *attributes, const int attrCount);
+    
     ~Printer();
 
     void PrintHeader(std::ostream &c) const;
@@ -139,7 +142,6 @@ public:
     // RecData.  The second will be useful in the QL layer.
     void Print(std::ostream &c, const char * const data);
     void Print(std::ostream &c, const void * const data[]);
-
     void PrintFooter(std::ostream &c) const;
 
 private:
